@@ -1,14 +1,12 @@
-use std::cell::Cell;
-use std::ffi::{c_char, c_int, c_uint, CStr};
+use std::ffi::{c_char, c_uint, CStr};
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
 
-thread_local! {
-    static SPEED: Cell<usize> = Cell::new(10);
-}
+static SPEED: AtomicUsize = AtomicUsize::new(10);
 
 static SPEEDS: [c_uint; 21] = [
-    6, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50
+    6, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50,
 ];
-
 
 /* Get CW speed
  *
@@ -17,51 +15,49 @@ static SPEEDS: [c_uint; 21] = [
  */
 #[no_mangle]
 pub extern "C" fn GetCWSpeed() -> c_uint {
-    SPEED.with(|speed| SPEEDS[speed.get()].try_into().unwrap())
+    SPEEDS[SPEED.load(Ordering::SeqCst)].try_into().unwrap()
 }
 
 #[no_mangle]
 pub extern "C" fn GetCWSpeedIndex() -> c_uint {
-    SPEED.with(|speed| speed.get().try_into().unwrap())
+    SPEED.load(Ordering::SeqCst).try_into().unwrap()
 }
-
 
 #[no_mangle]
 pub extern "C" fn SetCWSpeed(wpm: c_uint) {
-    SPEED.with(|speed| speed.set(speed_conversion(wpm)))
+    SPEED.store(speed_conversion(wpm), Ordering::SeqCst)
 }
 
 #[no_mangle]
-pub extern "C" fn DecreaseCWSpeed() -> c_int {
-    SPEED.with(|speed| {
-        if speed.get() > 0 {
-            speed.set(speed.get() - 1);
-        }
-
-        speed.get().try_into().unwrap()
-    })
+pub extern "C" fn DecreaseCWSpeed() {
+    SPEED
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |mut speed| {
+            if speed > 0 {
+                speed -= 1;
+            }
+            Some(speed)
+        })
+        .unwrap();
 }
 
 #[no_mangle]
-pub extern "C" fn IncreaseCWSpeed() -> c_int {
-    SPEED.with(|speed| {
-        if speed.get() < SPEEDS.len() - 1 {
-            speed.set(speed.get() + 1);
-        }
-
-        speed.get().try_into().unwrap()
-    })
+pub extern "C" fn IncreaseCWSpeed() {
+    SPEED
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |mut speed| {
+            if speed < SPEEDS.len() - 1 {
+                speed += 1;
+            }
+            Some(speed)
+        })
+        .unwrap();
 }
 
 /* converts cw speed in wpm to an numbered index into speedstr table */
 fn speed_conversion(cwspeed: c_uint) -> usize {
-    for (i, speed) in SPEEDS.iter().enumerate() {
-        if cwspeed <= *speed {
-            return i;
-        }
-    }
-
-    return SPEEDS.len() - 1;
+    SPEEDS
+        .iter()
+        .position(|speed| cwspeed <= *speed)
+        .unwrap_or(SPEEDS.len() - 1)
 }
 
 /** calculate dot length of a cw message
