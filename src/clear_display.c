@@ -29,7 +29,6 @@
 #include <glib.h>
 
 #include "cqww_simulator.h"
-#include "cw_utils.h"
 #include "change_rst.h"
 #include "get_time.h"
 #include "getctydata.h"
@@ -47,6 +46,7 @@
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 void clear_display(void);
 

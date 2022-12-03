@@ -34,7 +34,6 @@
 #include "bandmap.h"
 #include "cabrillo_utils.h"
 #include "change_rst.h"
-#include "cw_utils.h"
 #include "fldigixmlrpc.h"
 #include "globalvars.h"
 #include "getctydata.h"
@@ -51,6 +50,7 @@
 #include "startmsg.h"
 #include "tlf_curses.h"
 #include "searchlog.h"
+#include "rust.h"
 
 bool exist_in_country_list();
 

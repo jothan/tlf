@@ -44,7 +44,6 @@
 #include "clear_display.h"
 #include "cleanup.h"
 #include "cqww_simulator.h"
-#include "cw_utils.h"
 #include "edit_last.h"
 #include "err_utils.h"
 #include "deleteqso.h"
@@ -79,6 +78,7 @@
 #include "showzones.h"
 #include "bands.h"
 #include "fldigixmlrpc.h"
+#include "rust.h"
 
 typedef enum { STORE_OR_POP, POP, SWAP } memory_op_t;
 
@@ -1107,7 +1107,7 @@ int autosend() {
     timeout_sent = (1.2 / GetCWSpeed()) * getCWdots(current_qso.call[char_sent]);
 
     timer = g_timer_new();
-    timeout = (1.2 / GetCWSpeed()) * cw_message_length(current_qso.call);
+    timeout = (1.2 / GetCWSpeed()) * cw_message_length(current_qso.call, my.call);
 
     x = -1;
     while ((x != ESCAPE) && (x != '\n' && x != KEY_ENTER)) {

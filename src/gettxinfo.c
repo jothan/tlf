@@ -28,7 +28,6 @@
 #include <pthread.h>
 
 #include "bands.h"
-#include "cw_utils.h"
 #include "err_utils.h"
 #include "fldigixmlrpc.h"
 #include "gettxinfo.h"
@@ -38,6 +37,7 @@
 #include "tlf_curses.h"
 #include "callinput.h"
 #include "bands.h"
+#include "rust.h"
 
 #include <hamlib/rig.h>
 

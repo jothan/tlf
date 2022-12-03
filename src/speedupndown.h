@@ -22,8 +22,8 @@
 #ifndef SPEEDUPNDOWN_H
 #define SPEEDUPNDOWN_H
 
-int speedup(void);
-int speeddown(void);
+void speedup(void);
+void speeddown(void);
 int setweight(int weight);
 
 #endif /* end of include guard: SPEEDUPNDOWN_H */

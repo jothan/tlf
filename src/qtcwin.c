@@ -29,7 +29,6 @@
 
 #include "audio.h"
 #include "callinput.h"
-#include "cw_utils.h"
 #include "genqtclist.h"
 #include "get_time.h"
 #include "ignore_unused.h"
@@ -47,6 +46,8 @@
 #include "tlf_panel.h"
 #include "ui_utils.h"
 #include "write_keyer.h"
+#include "rust.h"
+
 /* check direction clause macro
  * direction should be RECV (1) or SEND (2), see tlf.h
  */

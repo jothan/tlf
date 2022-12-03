@@ -24,7 +24,6 @@
 #include <assert.h>
 
 #include "bands.h"
-#include "cw_utils.h"
 #include "err_utils.h"
 #include "hamlib_keyer.h"
 #include "sendqrg.h"
@@ -32,6 +31,7 @@
 #include "gettxinfo.h"
 #include "bands.h"
 #include "globalvars.h"
+#include "rust.h"
 
 static bool init_called = false;
 static bool can_send_morse = false;

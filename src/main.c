@@ -38,7 +38,6 @@
 #include "clear_display.h"
 #include "checklogfile.h"
 #include "checkqtclogfile.h"
-#include "cw_utils.h"
 #include "fldigixmlrpc.h"
 #include "getmessages.h"
 #include "getwwv.h"
@@ -65,6 +64,7 @@
 #include "tlf_panel.h"
 #include "readcabrillo.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #include <config.h>
 

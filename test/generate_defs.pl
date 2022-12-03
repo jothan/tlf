@@ -69,7 +69,7 @@ for my $g (sort keys %groups) {
     my $objects = join(' ',@{$groups{$g}{OBJECTS}});
     print $AM <<EOT;
 run_${g}_SOURCES = run_${g}.c test_${g}.c data.c functions.c
-run_${g}_LDADD = $objects
+run_${g}_LDADD = $objects ../src/librustlf.a
 
 EOT
 

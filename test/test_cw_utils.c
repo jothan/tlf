@@ -1,13 +1,12 @@
 #include "test.h"
 
-#include "../src/cw_utils.h"
+#include "../rustlf/rust.h"
 
 // OBJECT ../src/cw_utils.o
 
 
 void test_SetSpeed_success(void **state) {
     for (int i = 4; i <= 66; ++i) {
-	speed = -1;
 
 	SetCWSpeed(i);
 
@@ -25,7 +24,7 @@ void test_SetSpeed_success(void **state) {
 	    expected =  20;
 	}
 
-	assert_int_equal(speed, expected);
+	assert_int_equal(GetCWSpeedIndex(), expected);
     }
 }
 

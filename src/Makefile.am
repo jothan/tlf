@@ -38,7 +38,7 @@ tlf_SOURCES = \
 
 tlf_LDADD = @LIBM_LIB@ @PTHREAD_LIBS@ @GLIB_LIBS@ @PANEL_LIBS@ @CURSES_LIBS@ \
 	    @HAMLIB_LIBS@ @LIBXMLRPC_LIB@ @LIBXMLRPC_CLIENT_LIB@ \
-	    @LIBXMLRPC_UTIL_LIB@
+	    @LIBXMLRPC_UTIL_LIB@ librustlf.a
 
 noinst_HEADERS = \
 	addcall.h addmult.h addpfx.h addspot.h audio.h autocq.h \
@@ -46,7 +46,7 @@ noinst_HEADERS = \
 	cabrillo_utils.h calledit.h callinput.h changefreq.h changepars.h \
 	change_rst.h checklogfile.h checkqtclogfile.h \
 	cleanup.h clear_display.h clusterinfo.h \
-	cqww_simulator.h cw_utils.h \
+	cqww_simulator.h \
 	dxcc.h deleteqso.h \
 	edit_last.h editlog.h  err_utils.h \
 	fldigixmlrpc.h freq_display.h focm.h \

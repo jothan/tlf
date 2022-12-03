@@ -32,7 +32,6 @@
 
 #include "addspot.h"
 #include "audio.h"
-#include "cw_utils.h"
 #include "change_rst.h"
 #include "cleanup.h"
 #include "globalvars.h"
@@ -56,6 +55,7 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "addmult.h"
+#include "rust.h"
 
 #include "getexchange.h"
 

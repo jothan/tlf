@@ -26,7 +26,6 @@
 #include <glib.h>
 
 #include "clear_display.h"
-#include "cw_utils.h"
 #include "err_utils.h"
 #include "globalvars.h"
 #include "hamlib_keyer.h"
@@ -34,6 +33,7 @@
 #include "sendbuf.h"
 #include "tlf.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 
 void setspeed(void) {
@@ -85,19 +85,13 @@ void setspeed(void) {
  *        Page-up increases CW speed with 2 wpm
  *
  *--------------------------------------------------------------*/
-int speedup(void) {
+void speedup(void) {
 
     if (trxmode != CWMODE)
-	return (0);
+		return;
 
-    if (speed < 20) {
-
-	speed++;
+	IncreaseCWSpeed();
 	setspeed();
-
-    }
-
-    return (speed);
 }
 
 
@@ -105,19 +99,13 @@ int speedup(void) {
  *        Page down,  decrementing the cw speed with  2 wpm
  *
  *--------------------------------------------------------------*/
-int speeddown(void) {
+void speeddown(void) {
 
     if (trxmode != CWMODE)	/* bail out, this is an SSB contest */
-	return (0);
+		return;
 
-    if (speed >= 1) {
-
-	speed--;
+	DecreaseCWSpeed();
 	setspeed();
-
-    }
-
-    return (speed);
 }
 
 
