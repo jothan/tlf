@@ -1,3 +1,4 @@
+use std::cmp::min;
 use std::ffi::{c_char, c_uint, CStr};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
@@ -15,7 +16,7 @@ static SPEEDS: [c_uint; 21] = [
  */
 #[no_mangle]
 pub extern "C" fn GetCWSpeed() -> c_uint {
-    SPEEDS[SPEED.load(Ordering::SeqCst)].try_into().unwrap()
+    SPEEDS[SPEED.load(Ordering::SeqCst)]
 }
 
 #[no_mangle]
@@ -31,11 +32,8 @@ pub extern "C" fn SetCWSpeed(wpm: c_uint) {
 #[no_mangle]
 pub extern "C" fn DecreaseCWSpeed() {
     SPEED
-        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |mut speed| {
-            if speed > 0 {
-                speed -= 1;
-            }
-            Some(speed)
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |speed| {
+            Some(speed.saturating_sub(1))
         })
         .unwrap();
 }
@@ -43,11 +41,8 @@ pub extern "C" fn DecreaseCWSpeed() {
 #[no_mangle]
 pub extern "C" fn IncreaseCWSpeed() {
     SPEED
-        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |mut speed| {
-            if speed < SPEEDS.len() - 1 {
-                speed += 1;
-            }
-            Some(speed)
+        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |speed| {
+            Some(min(speed + 1, SPEEDS.len() - 1))
         })
         .unwrap();
 }
@@ -81,8 +76,7 @@ pub extern "C" fn cw_message_length(message: *const c_char, mycall: *const c_cha
                 mycall
                     .to_bytes()
                     .iter()
-                    .copied()
-                    .map(|c| getCWdots(c.try_into().unwrap()))
+                    .map(|c| getCWdots((*c).try_into().unwrap()))
                     .sum()
             } else {
                 getCWdots(c.try_into().unwrap())
