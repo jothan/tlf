@@ -14,6 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let bindings = bindgen::Builder::default()
         .opaque_type("channel_cap")
         .header("../src/globalvars.h")
+        .header("../src/qtcvars.h")
         .clang_args(includes)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()

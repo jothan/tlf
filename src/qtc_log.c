@@ -31,6 +31,7 @@
 #include "qtcutil.h"
 #include "qtcvars.h"		// Includes globalvars.h
 #include "tlf_curses.h"
+#include "rust.h"
 
 int log_recv_qtc_to_disk(int qsonr) {
 

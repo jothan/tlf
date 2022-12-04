@@ -146,22 +146,6 @@ struct t_qtc_store_obj *qtc_get(char callsign[15]) {
 
 }
 
-void parse_qtcline(char *logline, char callsign[15], int direction) {
-
-    int i = 0;
-
-    if (direction == RECV) {
-	strncpy(callsign, logline + 30, 15);
-    }
-    if (direction == SEND) {
-	strncpy(callsign, logline + 35, 15);
-    }
-    while (callsign[i] != ' ') {
-	i++;
-    }
-    callsign[i] = '\0';
-}
-
 char qtc_get_value(struct t_qtc_store_obj *qtc_obj) {
 
     if (qtc_obj->total > 0) {

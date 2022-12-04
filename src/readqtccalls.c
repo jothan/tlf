@@ -31,6 +31,7 @@
 #include "qtcvars.h"		// Includes globalvars.h
 #include "startmsg.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 
 int qtcdirection = 0;
