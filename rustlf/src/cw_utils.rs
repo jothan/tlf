@@ -63,9 +63,9 @@ fn speed_conversion(cwspeed: c_uint) -> usize {
  * \return number of dot elements in the message
  */
 #[no_mangle]
-pub extern "C" fn cw_message_length(message: *const c_char, mycall: *const c_char) -> c_uint {
+pub extern "C" fn cw_message_length(message: *const c_char) -> c_uint {
     let message = unsafe { CStr::from_ptr(message) };
-    let mycall = unsafe { CStr::from_ptr(mycall) };
+    let mycall = unsafe { CStr::from_ptr(crate::tlf::my.call.as_ptr()) }.to_bytes();
 
     message
         .to_bytes()
@@ -74,7 +74,6 @@ pub extern "C" fn cw_message_length(message: *const c_char, mycall: *const c_cha
         .map(|c| {
             if c == b'%' {
                 mycall
-                    .to_bytes()
                     .iter()
                     .map(|c| getCWdots((*c).try_into().unwrap()))
                     .sum()

@@ -1107,7 +1107,7 @@ int autosend() {
     timeout_sent = (1.2 / GetCWSpeed()) * getCWdots(current_qso.call[char_sent]);
 
     timer = g_timer_new();
-    timeout = (1.2 / GetCWSpeed()) * cw_message_length(current_qso.call, my.call);
+    timeout = (1.2 / GetCWSpeed()) * cw_message_length(current_qso.call);
 
     x = -1;
     while ((x != ESCAPE) && (x != '\n' && x != KEY_ENTER)) {

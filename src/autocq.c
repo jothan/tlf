@@ -47,7 +47,7 @@ static int get_autocq_time() {
     if (trxmode != CWMODE) {
 	return 0;   // unknown
     }
-    const int cw_message_len = cw_message_length(message[11], my.call);
+    const int cw_message_len = cw_message_length(message[11]);
     return (int)(1200.0 / GetCWSpeed()) * cw_message_len;
 }
 
