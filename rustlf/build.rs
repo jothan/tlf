@@ -17,6 +17,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("../src/qtcvars.h")
         .clang_args(includes)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .layout_tests(false)
         .generate()
         .map_err(|_| "could not generate bindings")?;
 

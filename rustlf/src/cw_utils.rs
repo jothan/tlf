@@ -63,7 +63,7 @@ fn speed_conversion(cwspeed: c_uint) -> usize {
  * \return number of dot elements in the message
  */
 #[no_mangle]
-pub extern "C" fn cw_message_length(message: *const c_char) -> c_uint {
+pub unsafe extern "C" fn cw_message_length(message: *const c_char) -> c_uint {
     let message = unsafe { CStr::from_ptr(message) };
     let mycall = unsafe { CStr::from_ptr(crate::tlf::my.call.as_ptr()) }.to_bytes();
 
