@@ -6,38 +6,44 @@ use std::time::Duration;
 use crate::tlf;
 use crate::write_keyer::{KeyerConsumer, write_keyer};
 
-static STOP_PROCESS: Mutex<bool> = Mutex::new(true);
+struct StopFlags {
+    stopped: bool,
+    stop_request: bool,
+}
+
+static STOP_PROCESS: Mutex<StopFlags> = Mutex::new(StopFlags { stopped: false, stop_request: true });
 static START_COND: Condvar = Condvar::new();
 static STOPPED_COND: Condvar = Condvar::new();
 
 #[no_mangle]
 pub extern "C" fn stop_background_process() {
-    let mut stop = STOP_PROCESS.lock().unwrap();
-    *stop = true;
+    let mut s = STOP_PROCESS.lock().unwrap();
+    s.stop_request = true;
 
-    // Not safe against a spurious wakeup.
-    let _stop = STOPPED_COND.wait(stop).unwrap();
+    let _s = STOPPED_COND.wait_while(s, |s| !s.stopped).unwrap();
 }
 
 #[no_mangle]
 pub extern "C" fn start_background_process() {
-    let mut stop = STOP_PROCESS.lock().unwrap();
-    *stop = false;
+    let mut s = STOP_PROCESS.lock().unwrap();
+    s.stop_request = false;
     START_COND.notify_all();
 }
 
 #[no_mangle]
 pub extern "C" fn is_background_process_stopped() -> bool {
-    *STOP_PROCESS.lock().unwrap()
+    STOP_PROCESS.lock().unwrap().stop_request
 }
 
 
 fn background_process_wait() {
-    let stop = STOP_PROCESS.lock().unwrap();
+    let mut s = STOP_PROCESS.lock().unwrap();
 
-    if *stop {
+    if s.stop_request {
+        s.stopped = true;
         STOPPED_COND.notify_all();
-        let _stop = START_COND.wait_while(stop, |stop| *stop).unwrap();
+        s = START_COND.wait_while(s, |s| s.stop_request).unwrap();
+        s.stopped = false;
     }
 }
 
@@ -78,7 +84,7 @@ pub unsafe extern "C" fn background_process(keyer_consumer: *mut c_void) -> *mut
             fldigi_rpc_cnt = !fldigi_rpc_cnt;
         }
 
-        if !*STOP_PROCESS.lock().unwrap() {
+        if !is_background_process_stopped() {
             tlf::cqww_simulator();
             write_keyer(&mut keyer_consumer);
         }
