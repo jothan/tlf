@@ -41,6 +41,7 @@
 #include "scroll_log.h"
 #include "tlf.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 void edit(char *filename) {
     extern char *editor_cmd;

@@ -22,8 +22,6 @@
 #ifndef BACKGROUND_PROCESS_H
 #define BACKGROUND_PROCESS_H
 
-void *background_process(void *);
-void stop_background_process(void);
-void start_background_process(void);
+void handle_lan_recv(int *lantimesync);
 
 #endif /* end of include guard: BACKGROUND_PROCESS_H */

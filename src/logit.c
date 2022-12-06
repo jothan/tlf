@@ -49,6 +49,7 @@
 #include "ui_utils.h"
 #include "cleanup.h"
 #include "utils.h"
+#include "rust.h"
 
 void refresh_comment(void);
 void change_mode(void);

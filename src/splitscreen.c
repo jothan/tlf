@@ -1108,7 +1108,7 @@ int receive_packet(void) {
     char line[BUFFERSIZE];
     int i = 0;
 
-    if (in_packetclient == 1)
+    if (packetinterface == 0 || in_packetclient == 1)
 	return (0);
 
     if (packetinterface == TELNET_INTERFACE) {

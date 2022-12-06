@@ -38,6 +38,7 @@
 #include "scroll_log.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #define NR_LINES 5
 #define NR_COLS 80

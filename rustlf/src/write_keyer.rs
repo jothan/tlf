@@ -21,7 +21,7 @@ static KEYER_PRODUCER: Mutex<Option<KeyerProducer>> = Mutex::new(None);
 static KEYER_FLUSH_REQUEST: AtomicBool = AtomicBool::new(false);
 
 type KeyerProducer = Producer<'static, KEYER_QUEUE_SIZE>;
-type KeyerConsumer = Consumer<'static, KEYER_QUEUE_SIZE>;
+pub(crate) type KeyerConsumer = Consumer<'static, KEYER_QUEUE_SIZE>;
 
 #[no_mangle]
 pub extern "C" fn keyer_queue_init() -> *mut c_void {
@@ -89,9 +89,7 @@ fn combine_segments<'a>((left, right): (&'a [u8], &'a [u8])) -> Cow<'a, [u8]> {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn write_keyer(consumer: *mut c_void) {
-    let consumer = unsafe { &mut *(consumer as *mut KeyerConsumer) };
+pub(crate) fn write_keyer(consumer: &mut KeyerConsumer) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     if trxmode != tlf::CWMODE && trxmode != tlf::DIGIMODE {
         return;

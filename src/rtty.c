@@ -194,6 +194,8 @@ void rx_rtty() {
 					   2 - ':' found
 					   3 - additional space passed
 					 */
+    if (trxmode != DIGIMODE || digikeyer == NO_KEYER)
+        return;
 
     if (!initialized) {
 	for (i = 0; i < 5; ++i) {

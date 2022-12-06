@@ -8,6 +8,7 @@ mod tlf {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
+mod background_process;
 mod cw_utils;
 pub mod err_utils;
 mod qtcutil;
