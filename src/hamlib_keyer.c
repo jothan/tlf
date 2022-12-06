@@ -49,7 +49,7 @@ int hamlib_keyer_get_speed(int *cwspeed) {
     return ret;
 }
 
-int hamlib_keyer_send(char *cwmessage) {
+int hamlib_keyer_send(const char *cwmessage) {
     pthread_mutex_lock(&rig_lock);
     int ret = rig_send_morse(my_rig, RIG_VFO_CURR, cwmessage);
     pthread_mutex_unlock(&rig_lock);

@@ -31,7 +31,7 @@
 #include "recall_exchange.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
-#include "write_keyer.h"
+#include "rust.h"
 
 gchar *comment_backup = NULL;
 gchar *call_backup = NULL;

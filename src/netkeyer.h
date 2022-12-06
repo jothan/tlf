@@ -39,7 +39,7 @@
 #define K_SIDETONE 15	// set sidetone to sound card
 #define K_STVOLUME 16	// set sidetone volume
 
-int netkeyer(int cw_op, char *cwmessage);
+int netkeyer(int cw_op, const char *cwmessage);
 int netkeyer_close(void);
 int netkeyer_init(void);
 

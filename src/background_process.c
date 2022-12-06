@@ -39,7 +39,7 @@
 #include "rtty.h"
 #include "splitscreen.h"
 #include "tlf.h"
-#include "write_keyer.h"
+#include "rust.h"
 
 // don't start until we know what we are doing
 static bool stop_backgrnd_process = true;
@@ -73,8 +73,7 @@ static void background_process_wait(void) {
     pthread_mutex_unlock(&stop_backgrnd_process_mutex);
 }
 
-void *background_process(void *ptr) {
-
+void *background_process(void *keyer_consumer) {
     char *prmessage;
     static int lantimesync = 0;
     static int fldigi_rpc_cnt = 0;
@@ -121,8 +120,8 @@ void *background_process(void *ptr) {
 	}
 
 	if (!stop_backgrnd_process) {
-	    write_keyer();
 	    cqww_simulator();
+	    write_keyer(keyer_consumer);
 	}
 
 	if (lan_active) {

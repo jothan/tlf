@@ -363,7 +363,7 @@ static int cancel_tx() {
 #endif
 
 /* send message to Fldigi TX window, transmit it */
-int fldigi_send_text(char *line) {
+int fldigi_send_text(const char *line) {
     int rc = 0;
 
 #ifdef HAVE_LIBXMLRPC

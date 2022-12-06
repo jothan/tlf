@@ -40,7 +40,7 @@
 #include "netkeyer.h"
 #include "tlf.h"
 #include "tlf_curses.h"
-#include "write_keyer.h"
+#include "rust.h"
 
 #include "sendbuf.h"
 

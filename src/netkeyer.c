@@ -93,7 +93,7 @@ int netkeyer_close(void) {
 			buf[1] = x; \
 			buf[2] = 0; } while(0); }
 
-int netkeyer(int cw_op, char *cwmessage) {
+int netkeyer(int cw_op, const char *cwmessage) {
     char buf[BUFSIZE] = "";
     ssize_t sendto_rc = 0;
     int add_message = 0;

@@ -1080,8 +1080,10 @@ int main(int argc, char *argv[]) {
     }
     atexit(tlf_cleanup); 	/* register cleanup function */
 
+    void *bg_keyer = keyer_queue_init();
+
     /* Create the background thread */
-    ret = pthread_create(&background_thread, NULL, background_process, NULL);
+    ret = pthread_create(&background_thread, NULL, background_process, bg_keyer);
     if (ret) {
 	perror("pthread_create: backgound_process");
 	endwin();

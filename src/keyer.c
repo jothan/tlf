@@ -40,7 +40,7 @@
 #include "tlf.h"
 #include "tlf_panel.h"
 #include "ui_utils.h"
-#include "write_keyer.h"
+#include "rust.h"
 
 /* size and position of keyer window */
 #define KEYER_LINE_WIDTH 60

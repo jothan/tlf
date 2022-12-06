@@ -28,7 +28,7 @@
 #include "sendbuf.h"
 #include "set_tone.h"
 #include "tlf.h"
-#include "write_keyer.h"
+#include "rust.h"
 
 /* CW Simulator
  * works only in RUN mode for CQWW contest
@@ -77,7 +77,6 @@ static void set_simulator_tone() {
     write_tone();
 
     sendmessage("  ");
-    write_keyer();      // two spaces delay
 }
 
 static void restore_tone() {
@@ -110,7 +109,6 @@ void cqww_simulator(void) {
 	callnumber %= callmaster->len;
 
 	sendmessage(CALLMASTERARRAY(callnumber));
-	write_keyer();
 
 	repeat_count = 0;
 	restore_tone();
@@ -129,7 +127,6 @@ void cqww_simulator(void) {
 
 	char *str = g_strdup_printf("TU 5NN %s", cqzone);
 	sendmessage(str);
-	write_keyer();
 	g_free(str);
 	cqzone[0] = save;
 
@@ -154,7 +151,6 @@ void cqww_simulator(void) {
 				    CALLMASTERARRAY(callnumber),
 				    &"+++"[3 - slow]);
 	sendmessage(str);
-	write_keyer();
 	g_free(str);
 
 	restore_tone();

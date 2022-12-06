@@ -9,4 +9,6 @@ mod tlf {
 }
 
 mod cw_utils;
+pub mod err_utils;
 mod qtcutil;
+mod write_keyer;

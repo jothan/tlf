@@ -45,7 +45,6 @@
 #include "time_update.h"
 #include "tlf_panel.h"
 #include "ui_utils.h"
-#include "write_keyer.h"
 #include "rust.h"
 
 /* check direction clause macro
@@ -754,7 +753,8 @@ void qtc_main_panel(int direction) {
 
 			}
 			keyer_append(tmess);
-			write_keyer();
+                        // Why is this here ?
+			//write_keyer();
 			wattrset(qtcwin, LINE_INVERTED);
 			mvwaddstr(qtcwin, 2, 11, "CTRL+S to SAVE!");
 			refreshp();
