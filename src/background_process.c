@@ -73,6 +73,13 @@ static void background_process_wait(void) {
     pthread_mutex_unlock(&stop_backgrnd_process_mutex);
 }
 
+static bool is_stopped(void) {
+    pthread_mutex_lock(&stop_backgrnd_process_mutex);
+    bool stopped = stop_backgrnd_process;
+    pthread_mutex_unlock(&stop_backgrnd_process_mutex);
+    return stopped;
+}
+
 static void handle_lan(int *lantimesync);
 
 void *background_process(void *keyer_consumer) {
@@ -115,7 +122,7 @@ void *background_process(void *keyer_consumer) {
 	    fldigi_rpc_cnt = 1 - fldigi_rpc_cnt;
 	}
 
-	if (!stop_backgrnd_process) {
+	if (!is_stopped()) {
 	    cqww_simulator();
 	    write_keyer(keyer_consumer);
 	}
@@ -159,7 +166,7 @@ static void handle_lan(int *lantimesync) {
         TLF_LOG_WARN("%s", "Warning: NODE ID CONFLICT ?! You should use another ID! ");
     }
 
-    if (lan_message[0] != thisnode && !stop_backgrnd_process) {
+    if (lan_message[0] != thisnode && !is_stopped()) {
         switch (lan_message[1]) {
 
             case LOGENTRY:
