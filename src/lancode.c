@@ -19,6 +19,7 @@
  */
 
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -41,7 +42,6 @@
 
 
 int lan_socket_descriptor;
-char lan_message[256];
 //--------------------------------------
 int bc_socket_descriptor[MAXNODES];
 ssize_t bc_sendto_rc;
@@ -143,36 +143,36 @@ int lan_recv_close(void) {
     return 0;
 }
 
-int lan_recv(void) {
+int lan_recv(char lan_message[256]) {
+    const ssize_t bufsize = 256;
     ssize_t lan_recv_rc;
     struct sockaddr_in lan_sin;
     unsigned int lan_sin_len = sizeof(lan_sin);
-    char lan_recv_message[256];
 
     if (!lan_active)
 	return 0;
 
-    lan_recv_message[0] = '\0';
+    lan_message[0] = '\0';
 
     lan_recv_rc =
-	recvfrom(lan_socket_descriptor, lan_recv_message,
-		 sizeof(lan_recv_message), 0, (struct sockaddr *) &lan_sin,
+	recvfrom(lan_socket_descriptor, lan_message,
+		 bufsize-1, 0, (struct sockaddr *) &lan_sin,
 		 &lan_sin_len);
 
     if (lan_recv_rc == -1 && errno != EAGAIN) {
 	recv_error++;
 	return errno;
     }
+    assert(lan_recv_rc >= 0 && lan_recv_rc < bufsize);
 
     errno = 0;			/* clear the error */
+    lan_message[lan_recv_rc] = 0;
 
-    if (lan_recv_message[1] == CLUSTERMSG)
+    if (lan_recv_rc >= 2 && lan_message[1] == CLUSTERMSG)
 	cl_send_inhibit = 1;	// this node does not send cluster info
 
     if (lan_recv_rc > 0)
 	recv_packets++;
-
-    strcpy(lan_message, lan_recv_message);
 
     return 0;
 }

@@ -55,7 +55,7 @@ void change_mode(void);
 void resend_callsign(void);
 
 static void log_qso() {
-    log_to_disk(false);
+    log_to_disk(NULL);
     if (sprint_mode) {
 	change_mode();
     }

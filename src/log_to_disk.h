@@ -22,6 +22,6 @@
 #define LOG_TO_DISK_H
 
 void restart_band_timer(void);
-void log_to_disk(int from_lan);
+void log_to_disk(char lan_message[256]);
 
 #endif /*  LOG_TO_DISK_H */

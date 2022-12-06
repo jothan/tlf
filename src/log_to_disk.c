@@ -67,8 +67,8 @@ void restart_band_timer(void) {
  *
  * \param from_lan true - Log lanmessage, false - normal message
  */
-void log_to_disk(int from_lan) {
-
+void log_to_disk(char lan_message[256]) {
+    bool from_lan = lan_message != NULL;
     pthread_mutex_lock(&disk_mutex);
 
     if (!from_lan) {		// qso from this node
