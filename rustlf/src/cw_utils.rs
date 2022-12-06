@@ -21,7 +21,7 @@ pub extern "C" fn GetCWSpeed() -> c_uint {
 
 #[no_mangle]
 pub extern "C" fn GetCWSpeedIndex() -> c_uint {
-    SPEED.load(Ordering::SeqCst).try_into().unwrap()
+    SPEED.load(Ordering::SeqCst) as _
 }
 
 #[no_mangle]
@@ -75,10 +75,10 @@ pub unsafe extern "C" fn cw_message_length(message: *const c_char) -> c_uint {
             if c == b'%' {
                 mycall
                     .iter()
-                    .map(|c| getCWdots((*c).try_into().unwrap()))
+                    .map(|c| getCWdots((*c) as c_char))
                     .sum()
             } else {
-                getCWdots(c.try_into().unwrap())
+                getCWdots(c as c_char)
             }
         })
         .sum()
