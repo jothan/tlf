@@ -51,7 +51,7 @@ fn keyer_append_safe(mut text: &[u8]) {
     let mut producer = KEYER_PRODUCER.lock().unwrap();
     let producer = producer.as_mut().expect("Keyer queue not initialized");
 
-    while text.len() != 0 {
+    while !text.is_empty() {
         let mut grant = match producer.grant_max_remaining(text.len()) {
             Ok(grant) => grant,
             Err(bbqueue::Error::InsufficientSize) => return, // Overflow, ignore for now
@@ -79,9 +79,9 @@ pub extern "C" fn keyer_flush() {
 }
 
 fn combine_segments<'a>((left, right): (&'a [u8], &'a [u8])) -> Cow<'a, [u8]> {
-    if right.len() == 0 {
+    if right.is_empty() {
         Cow::Borrowed(left)
-    } else if left.len() == 0 {
+    } else if left.is_empty() {
         Cow::Borrowed(right)
     } else {
         let mut out = left.to_owned();
