@@ -1,12 +1,13 @@
 use std::{
     borrow::Cow,
-    ffi::{c_char, c_int, c_void, CStr, CString},
+    ffi::{c_char, c_int, c_void, CStr, CString, OsStr},
     io::Write,
     sync::{
         atomic::{AtomicBool, Ordering},
         Mutex,
     },
 };
+use std::os::unix::ffi::OsStrExt;
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
@@ -163,8 +164,10 @@ fn keyer_dispatch(data: CString) {
             }
         }
     } else if digikeyer == tlf::GMFSK {
-        let path = unsafe { CStr::from_ptr(&tlf::rttyoutput as *const i8) }.to_string_lossy();
-        if path.len() < 2 {
+        let path = unsafe { CStr::from_ptr(&tlf::rttyoutput as *const i8) };
+        let path = OsStr::from_bytes(path.to_bytes());
+
+        if path.is_empty() {
             log_message(
                 LogLevel::WARN,
                 CString::new("No modem file specified!").unwrap(),
@@ -181,12 +184,10 @@ fn keyer_dispatch(data: CString) {
         let file_open = std::fs::File::options()
             .append(true)
             .create(false)
-            .open(path.as_ref());
-        match file_open {
-            Ok(mut file) => {
-                let _ = file.write_all(&data_bytes);
-            }
-            Err(_) => {}
+            .open(path);
+
+        if let Ok(mut file) = file_open {
+            let _ = file.write_all(&data_bytes);
         }
     }
 }
