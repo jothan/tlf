@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
-use crate::err_utils::{log_message, LogLevel};
+use crate::err_utils::{log_message, CResult, LogLevel};
 use crate::{parse_cstr, tlf};
 
 thread_local! {
@@ -45,7 +45,7 @@ fn make_buf<const N: usize>() -> Cursor<[u8; N]> {
     Cursor::new([0; N])
 }
 
-fn extract_buf<'a, const N: usize>(cursor: &'a Cursor<[u8; N]>) -> &'a [u8] {
+fn extract_buf<const N: usize>(cursor: &Cursor<[u8; N]>) -> &[u8] {
     let s = cursor.get_ref().as_slice();
     &s[..cursor.position() as usize]
 }
@@ -103,7 +103,7 @@ impl Netkeyer {
     pub(crate) fn set_speed(&self, speed: u8) -> Result<(), KeyerError> {
         let mut buf = make_buf::<4>();
 
-        if speed < 5 || speed > 60 {
+        if !(5..=60).contains(&speed) {
             return Err(KeyerError::InvalidParameter);
         }
 
@@ -115,7 +115,7 @@ impl Netkeyer {
     pub(crate) fn set_tone(&self, tone: u16) -> Result<(), KeyerError> {
         let mut buf = make_buf::<6>();
 
-        if tone != 0 && (tone < 300 || tone > 1000) {
+        if tone != 0 && !(300..=1000).contains(&tone) {
             return Err(KeyerError::InvalidParameter);
         }
 
@@ -139,7 +139,7 @@ impl Netkeyer {
     pub(crate) fn set_weight(&self, weight: i8) -> Result<(), KeyerError> {
         let mut buf = make_buf::<6>();
 
-        if weight < -50 || weight > 50 {
+        if !(-50..=50).contains(&weight) {
             return Err(KeyerError::InvalidParameter);
         }
 
@@ -199,7 +199,7 @@ impl Netkeyer {
     pub(crate) fn set_band_switch(&self, bandindex: u8) -> Result<(), KeyerError> {
         let mut buf = make_buf::<4>();
 
-        if bandindex < 1 || bandindex > 9 {
+        if !(1..=9).contains(&bandindex) {
             return Err(KeyerError::InvalidParameter);
         }
 
@@ -269,26 +269,25 @@ pub extern "C" fn get_tone() -> c_int {
 #[no_mangle]
 pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
     let prev_tone = TONE.swap(tone, Ordering::SeqCst);
-    let netkeyer = NETKEYER.with(|netkeyer| {
+    NETKEYER.with(|netkeyer| {
         if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
             write_tone_inner(netkeyer, tone).expect("netkeyer send error");
+        } else {
+            log_message(
+                LogLevel::INFO,
+                CStr::from_bytes_with_nul(b"keyer not active; switching to SSB\x00").unwrap(),
+            );
+            tlf::trxmode = tlf::SSBMODE as _;
         }
     });
 
-    return prev_tone;
+    prev_tone
 }
 
 pub(crate) unsafe fn write_tone_inner(netkeyer: &Netkeyer, tone: i32) -> Result<(), KeyerError> {
     let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
 
-    if let Err(_) = netkeyer.set_tone(tone) {
-        log_message(
-            LogLevel::INFO,
-            CStr::from_bytes_with_nul(b"keyer not active; switching to SSB\x00").unwrap(),
-        );
-        tlf::trxmode = tlf::SSBMODE as _;
-        return Ok(());
-    }
+    netkeyer.set_tone(tone)?;
 
     if tone != 0 {
         /* work around bugs in cwdaemon:
@@ -298,8 +297,9 @@ pub(crate) unsafe fn write_tone_inner(netkeyer: &Netkeyer, tone: i32) -> Result<
          * So... to be sure we set the volume back to our chosen value
          * or to 70% (like cwdaemon) if no volume got specified
          */
-        let sc_volume: u8 = parse_cstr(&tlf::sc_volume as *const c_char).unwrap_or(70);
-
+        let sc_volume: u8 = Some(tlf::sc_volume)
+            .and_then(|v| v.try_into().ok())
+            .unwrap_or(70);
         netkeyer.set_sidetone_volume(sc_volume);
     }
     Ok(())
@@ -309,7 +309,7 @@ pub(crate) unsafe fn init_params(netkeyer: &Netkeyer) -> Result<(), KeyerError> 
     netkeyer.reset()?;
     netkeyer.set_weight(tlf::weight as i8)?;
 
-    write_tone_inner(netkeyer, TONE.load(Ordering::SeqCst))?;
+    write_tone_inner(netkeyer, get_tone())?;
 
     netkeyer.set_speed(GetCWSpeed().try_into().unwrap())?;
     netkeyer.set_weight(tlf::weight as _)?;
@@ -325,10 +325,95 @@ pub(crate) unsafe fn init_params(netkeyer: &Netkeyer) -> Result<(), KeyerError> 
         netkeyer.set_sidetone_device(b's')?;
     }
 
-    let sc_volume = CStr::from_ptr(&tlf::sc_volume as *const c_char);
-    if !sc_volume.to_bytes().is_empty() {
-        netkeyer.set_sidetone_volume(parse_cstr(&tlf::sc_volume as *const c_char).unwrap())?;
+    let sc_volume = Some(tlf::sc_volume).and_then(|v| v.try_into().ok());
+    if let Some(sc_volume) = sc_volume {
+        netkeyer.set_sidetone_volume(sc_volume);
     }
 
     Ok(())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_speed(speed: c_uint) -> CResult {
+    with_netkeyer(|netkeyer| {
+        speed
+            .try_into()
+            .ok()
+            .and_then(|speed| netkeyer.set_speed(speed).ok())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_ptt(ptt: bool) -> CResult {
+    with_netkeyer(|netkeyer| netkeyer.set_ptt(ptt))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_weight(speed: c_int) -> CResult {
+    with_netkeyer(|netkeyer| {
+        speed
+            .try_into()
+            .ok()
+            .and_then(|speed| netkeyer.set_weight(speed).ok())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_abort() -> CResult {
+    with_netkeyer(|netkeyer| netkeyer.abort())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_pin14(pin14: bool) -> CResult {
+    with_netkeyer(|netkeyer| netkeyer.set_pin14(pin14))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_reset() -> CResult {
+    with_netkeyer(|netkeyer| netkeyer.reset())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_tune(seconds: c_uint) -> CResult {
+    with_netkeyer(|netkeyer| {
+        seconds
+            .try_into()
+            .ok()
+            .and_then(|speed| netkeyer.tune(speed).ok())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_band_switch(bandidx: c_uint) -> CResult {
+    with_netkeyer(|netkeyer| {
+        bandidx
+            .try_into()
+            .ok()
+            .and_then(|bandidx| netkeyer.set_band_switch(bandidx).ok())
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_enable_word_mode() -> CResult {
+    with_netkeyer(|netkeyer| netkeyer.enable_word_mode())
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult {
+    with_netkeyer(|netkeyer| {
+        volume
+            .try_into()
+            .ok()
+            .and_then(|volume| netkeyer.set_sidetone_volume(volume).ok())
+    })
+}
+
+fn with_netkeyer<R: Into<CResult>, F: FnOnce(&Netkeyer) -> R>(f: F) -> CResult {
+    NETKEYER.with(|netkeyer| {
+        if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
+            f(netkeyer).into()
+        } else {
+            CResult::Err
+        }
+    })
 }

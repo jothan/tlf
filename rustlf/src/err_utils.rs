@@ -28,3 +28,27 @@ pub fn log_message(level: LogLevel, message: impl AsRef<CStr>) {
         }
     }
 }
+
+#[repr(i32)]
+pub enum CResult {
+    Ok = 0,
+    Err = -1,
+}
+
+impl <T, E> From<Result<T, E>> for CResult {
+    fn from(result: Result<T, E>) -> CResult {
+        match result {
+            Ok(_) => CResult::Ok,
+            Err(_) => CResult::Err,
+        }
+    }
+}
+
+impl <T> From<Option<T>> for CResult {
+    fn from(option: Option<T>) -> CResult {
+        match option {
+            Some(_) => CResult::Ok,
+            None => CResult::Err,
+        }
+    }
+}

@@ -843,7 +843,7 @@ static int cfg_sc_volume(const cfg_arg_t arg) {
     if (rc != PARSE_OK) {
 	return rc;
     }
-    sprintf(sc_volume, "%d", value);
+    sc_volume = value;
     return PARSE_OK;
 }
 

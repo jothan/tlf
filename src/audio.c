@@ -46,6 +46,7 @@
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 static pthread_t vk_thread;
@@ -408,8 +409,8 @@ static void vk_do_record(int message_nr) {
 
 
 /* playing recorded voice keyer messages in background */
-void *play_thread(void *ptr) {
-    char *audiofile = (char *)ptr;
+void *play_thread(void *config) {
+    char *audiofile = init_playsound(config);
 
     pthread_detach(pthread_self());
 
@@ -419,14 +420,14 @@ void *play_thread(void *ptr) {
     char *playcommand = g_regex_replace(regex, vk_play_cmd, -1, 0,
 	    audiofile, 0, NULL);
     g_regex_unref(regex);
-    g_free(ptr);
+    close_playsound(audiofile);
 
     /* CAT PTT wanted and available, use it. */
     if (rigptt == CAT_PTT_USE) {
 	/* Request PTT On */
 	rigptt |= CAT_PTT_ON;
     } else {		/* Fall back to netkeyer interface */
-	netkeyer(K_PTT, "1");	// ptt on
+	netkeyer_set_ptt(true);
     }
 
     usleep(txdelay * 1000);
@@ -438,7 +439,7 @@ void *play_thread(void *ptr) {
 	/* Request PTT Off */
 	rigptt |= CAT_PTT_OFF;
     } else {		/* Fall back to netkeyer interface */
-	netkeyer(K_PTT, "0");	// ptt off
+	netkeyer_set_ptt(false);
     }
 
     vk_running= false;
@@ -463,11 +464,11 @@ void vk_play_file(char *audiofile) {
 	return;
     }
 
-    gchar *file = g_strdup(audiofile);	/* has to be freed in play_thread */
+    void *config = prepare_playsound(audiofile);
 
     /* play sound in separate thread so it can be killed from the main one */
-    if (pthread_create(&vk_thread, NULL, play_thread, (void *)file) != 0) {
-	    g_free(file);
+    if (pthread_create(&vk_thread, NULL, play_thread, config) != 0) {
+	    abort_playsound(config);
 	    TLF_LOG_INFO("could not start sound thread!");
     }
 }

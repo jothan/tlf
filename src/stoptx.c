@@ -31,6 +31,7 @@
 #include "netkeyer.h"
 #include "tlf.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 #include "fldigixmlrpc.h"
 
@@ -41,7 +42,7 @@ int stoptx(void) {
     } else if (trxmode == CWMODE) {
 	if (cwkeyer == NET_KEYER) {
 
-	    if (netkeyer(K_ABORT, NULL) < 0) {
+	    if (netkeyer_abort() < 0) {
 
 		TLF_LOG_WARN("keyer not active; switching to SSB");
 		trxmode = SSBMODE;

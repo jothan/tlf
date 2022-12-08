@@ -92,7 +92,6 @@ void handle_memory_operation(memory_op_t op);
 void tune() {
     int count;
     int count2;
-    gchar *buff;
 
     count2 = tune_seconds;
     while (count2 > 0) {
@@ -102,9 +101,7 @@ void tune() {
 	    count = count2;
 	}
 	count2 -= count;
-	buff = g_strdup_printf("%d", count);
-	netkeyer(K_TUNE, buff);	// cw on
-	g_free(buff);
+	netkeyer_tune(count);	// cw on
 
 	count = count * 4;    // sleeping 1/4 second units between keypress-checks
 	while (count > 0) {
@@ -117,7 +114,7 @@ void tune() {
 	}
     }
 
-    netkeyer(K_ABORT, "");	// cw abort
+    netkeyer_abort();	// cw abort
 }
 
 
@@ -390,7 +387,7 @@ int callinput(void) {
 
 		    if (tmp > -51 && tmp < 51) {
 			weight = tmp;
-			netkeyer(K_WEIGHT, weightbuf);
+			netkeyer_set_weight(weight);
 		    }
 		}
 		clear_display();
@@ -725,15 +722,15 @@ int callinput(void) {
 		    mvaddstr(0, 2, "PTT on   ");
 		    move(12, 29);
 		    refreshp();
-		    netkeyer(K_PTT, "1");	// ptt on
+		    netkeyer_set_ptt(true);
 		    x = key_get();	// any character to stop tuning
 		    if (x == ALT_P)	// Alt-P (M-p)
-			netkeyer(K_PTT, "0");	// ptt off
+			netkeyer_set_ptt(false);
 		    k_ptt = 0;
 		    show_header_line();
 		    refreshp();
 		} else
-		    netkeyer(K_PTT, "0");	// ptt off in any case.
+		    netkeyer_set_ptt(false); // ptt off in any case.
 
 		break;
 	    }
@@ -935,10 +932,10 @@ int callinput(void) {
 	    case CTRL_R: {
 		if (k_pin14 == 0) {
 		    k_pin14 = 1;
-		    netkeyer(K_SET14, "1");
+		    netkeyer_set_pin14(true);
 		} else {
 		    k_pin14 = 0;
-		    netkeyer(K_SET14, "0");
+		    netkeyer_set_pin14(false);
 		}
 		break;
 	    }
@@ -1182,7 +1179,6 @@ int autosend() {
 
 void send_bandswitch(freq_t freq) {
 
-    char outnibble[3];
     int bandswitch = 0;
 
     if (!use_bandoutput) {
@@ -1222,10 +1218,7 @@ void send_bandswitch(freq_t freq) {
     } else			// use the bandinx
 	bandswitch = bandinx + 1;
 
-    bandswitch = bandindexarray[bandswitch];
-
-    sprintf(outnibble, "%d", bandswitch);
-    netkeyer(K_SWITCH, outnibble);
+    netkeyer_set_band_switch(bandindexarray[bandswitch]);
 }
 
 

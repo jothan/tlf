@@ -39,14 +39,11 @@
 void setspeed(void) {
 
     int retval = 0;
-    char buff[3];
     int cwspeed = GetCWSpeed();
 
-    snprintf(buff, 3, "%2u", cwspeed);
 
     if (cwkeyer == NET_KEYER) {
-
-	retval = netkeyer(K_SPEED, buff);
+	retval = netkeyer_set_speed(cwspeed);
 
 	if (retval < 0) {
 	    TLF_LOG_WARN("keyer not active");
@@ -56,7 +53,6 @@ void setspeed(void) {
     }
 
     if (cwkeyer == HAMLIB_KEYER) {
-
 	retval = hamlib_keyer_set_speed(cwspeed);
 
 	if (retval < 0) {
@@ -66,13 +62,12 @@ void setspeed(void) {
     }
 
     if (cwkeyer == MFJ1278_KEYER) {
-
 	char *msg;
 
 	sendmessage("\\\015");
 	usleep(500000);
 
-	msg = g_strdup_printf("MSP %s \015", buff);
+	msg = g_strdup_printf("MSP %2u \015", cwspeed);
 	sendmessage(msg);
 	g_free(msg);
 
@@ -111,15 +106,10 @@ void speeddown(void) {
 
 /*  write weight to netkeyer */
 int setweight(int weight) {
-
     int retval;
-    char buff[4];
 
     if (cwkeyer == NET_KEYER && weight > -51 && weight < 51) {
-
-	sprintf(buff, "%d", weight);
-
-	retval = netkeyer(K_WEIGHT, buff);
+	retval = netkeyer_set_weight(weight);
 
 	if (retval < 0) {
 	    TLF_LOG_INFO("keyer not active ?");

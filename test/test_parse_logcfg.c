@@ -190,7 +190,7 @@ int setup_default(void **state) {
     multsfile[0] = 0;
     markerfile[0] = 0;
     synclogfile[0] = 0;
-    sc_volume[0] = 0;
+    sc_volume = 0;
     modem_mode[0] = 0;
     controllerport[0] = 0;
     clusterlogin[0] = 0;
@@ -1184,7 +1184,7 @@ void test_syncfile(void **state) {
 void test_sidetone_volume(void **state) {
     int rc = call_parse_logcfg("SIDETONE_VOLUME = 63\r\n");
     assert_int_equal(rc, PARSE_OK);
-    assert_string_equal(sc_volume, "63");
+    assert_int_equal(sc_volume, 63);
 }
 
 void test_mfj1278_keyer(void **state) {

@@ -65,6 +65,7 @@
 #include "ui_utils.h"
 #include "writecabrillo.h"
 #include "addmult.h"
+#include "rust.h"
 
 void center_fkey_header();
 
@@ -411,7 +412,7 @@ int changepars(void) {
 
 		if (cwkeyer == NET_KEYER) {
 
-		    if (netkeyer(K_WORDMODE, NULL) < 0) {
+		    if (netkeyer_enable_word_mode() < 0) {
 			TLF_LOG_INFO("keyer not active; switching to SSB");
 			trxmode = SSBMODE;
 			clear_display();
@@ -425,7 +426,7 @@ int changepars(void) {
 
 		if (cwkeyer == NET_KEYER) {
 
-		    if (netkeyer(K_RESET, NULL) < 0) {
+		    if (netkeyer_reset() < 0) {
 			TLF_LOG_INFO("keyer not active; switching to SSB");
 			trxmode = SSBMODE;
 			clear_display();
@@ -524,7 +525,7 @@ int changepars(void) {
 	    break;
 	}
 	case 43: {		/* SCVOLUME - set soundcard volume */
-	    volumebuffer = atoi(sc_volume);
+	    volumebuffer = sc_volume;
 	    mvaddstr(12, 29, "Vol: pgup/dwn");
 	    refreshp();
 	    usleep(500000);
@@ -561,9 +562,9 @@ int changepars(void) {
 		mvprintw(12, 34, "%d", volumebuffer);
 
 		if (volumebuffer >= 0 && volumebuffer <= 99)
-		    sprintf(sc_volume, "%d", volumebuffer);
+		    sc_volume = volumebuffer;
 
-		netkeyer(K_STVOLUME, sc_volume);
+		netkeyer_set_sidetone_volume(sc_volume);
 	    }
 
 	    clear_display();

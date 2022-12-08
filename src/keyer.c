@@ -221,7 +221,7 @@ void keyer(void) {
 		    noecho();
 
 		    weight = atoi(weightbuf);
-		    netkeyer(K_WEIGHT, weightbuf);
+		    netkeyer_set_weight(weight);
 		    break;
 		}
 

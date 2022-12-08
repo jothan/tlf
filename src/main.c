@@ -114,7 +114,7 @@ int ssbpoints;
 int cwpoints;
 bool lowband_point_mult = false;
 bool sc_sidetone;
-char sc_volume[4] = "";
+int sc_volume = -1;
 /* LZ3NY mods */
 int my_country_points = -1;
 int my_cont_points = -1;
@@ -900,9 +900,7 @@ static void tlf_cleanup() {
 
     cleanup_telnet();
 
-    if (trxmode == CWMODE && cwkeyer == NET_KEYER)
-	netkeyer_close();
-    else
+    if (trxmode != CWMODE || cwkeyer != NET_KEYER)
 	deinit_controller();
 
     if (my_rig) {

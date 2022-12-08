@@ -1,3 +1,4 @@
+use std::os::unix::ffi::OsStrExt;
 use std::{
     borrow::Cow,
     ffi::{c_char, c_int, CStr, CString, OsStr},
@@ -7,13 +8,14 @@ use std::{
         Mutex,
     },
 };
-use std::os::unix::ffi::OsStrExt;
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
-use crate::{err_utils::{log_message, LogLevel}, netkeyer::Netkeyer};
 use crate::tlf;
-
+use crate::{
+    err_utils::{log_message, LogLevel},
+    netkeyer::Netkeyer,
+};
 
 const KEYER_QUEUE_SIZE: usize = 400;
 
@@ -25,18 +27,15 @@ static KEYER_FLUSH_REQUEST: AtomicBool = AtomicBool::new(false);
 type KeyerProducer = Producer<'static, KEYER_QUEUE_SIZE>;
 pub(crate) type KeyerConsumer = Consumer<'static, KEYER_QUEUE_SIZE>;
 
-
 pub(crate) fn keyer_queue_init() -> KeyerConsumer {
     let (producer, consumer) = KEYER_QUEUE
         .try_split()
         .expect("Keyer queue initialization error");
 
-    {
-        let mut fg_producer = KEYER_PRODUCER.lock().unwrap();
-        *fg_producer = Some(producer);
-    }
+    let mut fg_producer = KEYER_PRODUCER.lock().unwrap();
+    *fg_producer = Some(producer);
 
-    return consumer;
+    consumer
 }
 
 #[no_mangle]
@@ -125,8 +124,10 @@ fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
 
     if digikeyer == tlf::FLDIGI && trxmode == tlf::DIGIMODE {
         unsafe { tlf::fldigi_send_text(data.as_ptr()) };
-    } if let Some(netkeyer) = netkeyer {
-        netkeyer.send_text(data.as_bytes()).expect("netkeyer send error");
+    } else if let Some(netkeyer) = netkeyer {
+        netkeyer
+            .send_text(data.as_bytes())
+            .expect("netkeyer send error");
     } else if cwkeyer == tlf::HAMLIB_KEYER {
         let mut data_bytes = data.into_bytes();
         // Filter out unsupported speed directives
@@ -137,7 +138,7 @@ fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
         if error != tlf::rig_errcode_e_RIG_OK as i32 {
             let str_error = unsafe { tlf::rigerror(error) };
             let str_error = unsafe { CStr::from_ptr(str_error) }.to_string_lossy();
-            let str_error = CString::new(format!("CW send error: {}", str_error)).unwrap();
+            let str_error = CString::new(format!("CW send error: {str_error}")).unwrap();
             log_message(LogLevel::WARN, str_error);
         }
     } else if cwkeyer == tlf::MFJ1278_KEYER || digikeyer == tlf::MFJ1278_KEYER {
