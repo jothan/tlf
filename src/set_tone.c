@@ -31,6 +31,7 @@
 #include "nicebox.h"	// Includes curses.h
 #include "set_tone.h"
 #include "tlf.h"
+#include "rust.h"
 
 char tonestr[5] = "600";
 
@@ -49,27 +50,4 @@ void set_tone(void) {
     tonestr[3] = '\0';
 
     write_tone();
-}
-
-void write_tone(void) {
-
-    if (netkeyer(K_TONE, tonestr) < 0) {
-	TLF_LOG_INFO("keyer not active; switching to SSB");
-	trxmode = SSBMODE;
-    }
-
-    if (atoi(tonestr) != 0) {
-	/* work around bugs in cwdaemon:
-	 * cwdaemon < 0.9.6 always set volume to 70% at change of tone freq
-	 * cwdaemon >=0.9.6 do not set volume at all after change of freq,
-	 * resulting in no tone output if you have a freq=0 in between
-	 * So... to be sure we set the volume back to our chosen value
-	 * or to 70% (like cwdaemon) if no volume got specified
-	 */
-	if (*sc_volume != '\0')     // set soundcard volume
-	    netkeyer(K_STVOLUME, sc_volume);
-	else
-	    netkeyer(K_STVOLUME, "70");
-    }
-
 }

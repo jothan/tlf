@@ -24,7 +24,5 @@
 extern char tonestr[];
 
 void set_tone(void);
-void write_tone(void);
-
 
 #endif /* end of include guard: SET_TONE_H */

@@ -14,6 +14,7 @@ panic = "abort"
 
 [dependencies]
 bbqueue = "0.5.1"
+thiserror = "1.0.37"
 
 [build-dependencies]
 bindgen = "0.63.0"

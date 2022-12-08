@@ -274,7 +274,6 @@ int keyerport = NO_KEYER;
 int txdelay = 0;
 int tune_seconds = 16;
 int weight = 0;
-char weightbuf[4];
 char tonestr[5] = "600";
 int cqdelay = 8;
 char wkeyerbuffer[400];

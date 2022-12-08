@@ -1,17 +1,21 @@
 use std::ffi::{c_int, c_void};
-use std::sync::{Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 
+use crate::netkeyer::Netkeyer;
 use crate::tlf;
-use crate::write_keyer::{KeyerConsumer, write_keyer};
+use crate::write_keyer::{write_keyer, KeyerConsumer};
 
 struct StopFlags {
     stopped: bool,
     stop_request: bool,
 }
 
-static STOP_PROCESS: Mutex<StopFlags> = Mutex::new(StopFlags { stopped: false, stop_request: true });
+static STOP_PROCESS: Mutex<StopFlags> = Mutex::new(StopFlags {
+    stopped: false,
+    stop_request: true,
+});
 static START_COND: Condvar = Condvar::new();
 static STOPPED_COND: Condvar = Condvar::new();
 
@@ -35,7 +39,6 @@ pub extern "C" fn is_background_process_stopped() -> bool {
     STOP_PROCESS.lock().unwrap().stop_request
 }
 
-
 fn background_process_wait() {
     let mut s = STOP_PROCESS.lock().unwrap();
 
@@ -47,9 +50,19 @@ fn background_process_wait() {
     }
 }
 
+pub(crate) struct BackgroundConfig {
+    pub(crate) keyer_consumer: KeyerConsumer,
+    pub(crate) netkeyer: Arc<Option<Netkeyer>>,
+}
+
 #[no_mangle]
-pub unsafe extern "C" fn background_process(keyer_consumer: *mut c_void) -> *mut c_void {
-    let mut keyer_consumer = Box::from_raw(keyer_consumer as *mut KeyerConsumer);
+pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void {
+    let BackgroundConfig {
+        mut keyer_consumer,
+        netkeyer,
+    } = *Box::from_raw(config as *mut BackgroundConfig);
+
+    let netkeyer = Option::as_ref(&*netkeyer);
 
     let mut lantimesync: c_int = 0;
     let mut fldigi_rpc_cnt: bool = false;
@@ -86,7 +99,7 @@ pub unsafe extern "C" fn background_process(keyer_consumer: *mut c_void) -> *mut
 
         if !is_background_process_stopped() {
             tlf::cqww_simulator();
-            write_keyer(&mut keyer_consumer);
+            write_keyer(&mut keyer_consumer, netkeyer);
         }
 
         tlf::handle_lan_recv(&mut lantimesync);

@@ -306,7 +306,6 @@ rmode_t digi_mode = RIG_MODE_NONE;
 
 int txdelay = 0;
 int weight = 0;
-char weightbuf[4];
 int cqdelay = 8;
 int k_pin14 = 0;
 int k_ptt = 0;
@@ -804,41 +803,9 @@ static void packet_init() {
 
 
 static void keyer_init() {
-    char keyerbuff[3];
-
     if (cwkeyer == NET_KEYER) {
 	showmsg("CW-Keyer is cwdaemon");
-
-	if (netkeyer_init() < 0) {
-	    showmsg("Cannot open NET keyer daemon ");
-	    refreshp();
-	    sleep(1);
-
-	} else {
-	    netkeyer(K_RESET, "0");
-
-	    sprintf(weightbuf, "%d", weight);
-
-	    write_tone();
-
-	    snprintf(keyerbuff, 3, "%2u", GetCWSpeed());
-	    netkeyer(K_SPEED, keyerbuff);		// set speed
-
-	    netkeyer(K_WEIGHT, weightbuf);		// set weight
-
-	    if (*keyer_device != '\0')
-		netkeyer(K_DEVICE, keyer_device);	// set device
-
-	    sprintf(keyerbuff, "%d", txdelay);
-	    netkeyer(K_TOD, keyerbuff);			// set TOD
-
-	    if (sc_sidetone)				// set soundcard output
-		netkeyer(K_SIDETONE, "");
-
-	    if (*sc_volume != '\0')			// set soundcard volume
-		netkeyer(K_STVOLUME, sc_volume);
-	}
-
+        // Initialized later by rust foreground_init()
     }
 
     if (cwkeyer == HAMLIB_KEYER) {
@@ -1021,6 +988,8 @@ int main(int argc, char *argv[]) {
 	endwin();
 	exit(EXIT_FAILURE);
     }
+    void *bg_config = foreground_init();
+
 
     if (convert_cabrillo) {
 	char *tstring =
@@ -1080,10 +1049,8 @@ int main(int argc, char *argv[]) {
     }
     atexit(tlf_cleanup); 	/* register cleanup function */
 
-    void *bg_keyer = keyer_queue_init();
-
     /* Create the background thread */
-    ret = pthread_create(&background_thread, NULL, background_process, bg_keyer);
+    ret = pthread_create(&background_thread, NULL, background_process, bg_config);
     if (ret) {
 	perror("pthread_create: backgound_process");
 	endwin();

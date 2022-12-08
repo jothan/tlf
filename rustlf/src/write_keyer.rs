@@ -1,6 +1,6 @@
 use std::{
     borrow::Cow,
-    ffi::{c_char, c_int, c_void, CStr, CString, OsStr},
+    ffi::{c_char, c_int, CStr, CString, OsStr},
     io::Write,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -11,8 +11,9 @@ use std::os::unix::ffi::OsStrExt;
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
-use crate::err_utils::{log_message, LogLevel};
+use crate::{err_utils::{log_message, LogLevel}, netkeyer::Netkeyer};
 use crate::tlf;
+
 
 const KEYER_QUEUE_SIZE: usize = 400;
 
@@ -24,8 +25,8 @@ static KEYER_FLUSH_REQUEST: AtomicBool = AtomicBool::new(false);
 type KeyerProducer = Producer<'static, KEYER_QUEUE_SIZE>;
 pub(crate) type KeyerConsumer = Consumer<'static, KEYER_QUEUE_SIZE>;
 
-#[no_mangle]
-pub extern "C" fn keyer_queue_init() -> *mut c_void {
+
+pub(crate) fn keyer_queue_init() -> KeyerConsumer {
     let (producer, consumer) = KEYER_QUEUE
         .try_split()
         .expect("Keyer queue initialization error");
@@ -35,9 +36,7 @@ pub extern "C" fn keyer_queue_init() -> *mut c_void {
         *fg_producer = Some(producer);
     }
 
-    let bg_consumer: Box<KeyerConsumer> = Box::new(consumer);
-    let bg_consumer: *mut KeyerConsumer = Box::into_raw(bg_consumer);
-    bg_consumer as *mut c_void
+    return consumer;
 }
 
 #[no_mangle]
@@ -90,7 +89,7 @@ fn combine_segments<'a>((left, right): (&'a [u8], &'a [u8])) -> Cow<'a, [u8]> {
     }
 }
 
-pub(crate) fn write_keyer(consumer: &mut KeyerConsumer) {
+pub(crate) fn write_keyer(consumer: &mut KeyerConsumer, netkeyer: Option<&Netkeyer>) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     if trxmode != tlf::CWMODE && trxmode != tlf::DIGIMODE {
         return;
@@ -115,19 +114,19 @@ pub(crate) fn write_keyer(consumer: &mut KeyerConsumer) {
         CString::new(combine_segments(grant.bufs())).expect("Unexpected 0 byte in keyer data");
     grant.release(len);
 
-    keyer_dispatch(data);
+    keyer_dispatch(data, netkeyer);
 }
 
 #[inline]
-fn keyer_dispatch(data: CString) {
+fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     let cwkeyer = unsafe { tlf::cwkeyer } as u32;
     let digikeyer = unsafe { tlf::digikeyer } as u32;
 
     if digikeyer == tlf::FLDIGI && trxmode == tlf::DIGIMODE {
         unsafe { tlf::fldigi_send_text(data.as_ptr()) };
-    } else if cwkeyer == tlf::NET_KEYER {
-        unsafe { tlf::netkeyer(tlf::K_MESSAGE as i32, data.as_ptr()) };
+    } if let Some(netkeyer) = netkeyer {
+        netkeyer.send_text(data.as_bytes()).expect("netkeyer send error");
     } else if cwkeyer == tlf::HAMLIB_KEYER {
         let mut data_bytes = data.into_bytes();
         // Filter out unsupported speed directives

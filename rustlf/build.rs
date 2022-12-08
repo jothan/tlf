@@ -24,6 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("../src/rtty.h")
         .header("../src/cqww_simulator.h")
         .header("../src/gettxinfo.h")
+        .header("../src/set_tone.h")
         .header("/usr/include/curses.h")
         .clang_args(includes)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
