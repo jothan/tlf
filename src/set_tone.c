@@ -33,9 +33,8 @@
 #include "tlf.h"
 #include "rust.h"
 
-char tonestr[5] = "600";
-
 void set_tone(void) {
+    char tonestr[5] = "";
 
     if (trxmode != CWMODE)
 	return;
@@ -49,5 +48,5 @@ void set_tone(void) {
     noecho();
     tonestr[3] = '\0';
 
-    write_tone();
+    write_tone(parse_tone(tonestr));
 }

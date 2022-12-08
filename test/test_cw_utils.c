@@ -4,6 +4,7 @@
 
 // OBJECT ../src/cw_utils.o
 
+void clear_line(int line) { abort(); }
 
 void test_SetSpeed_success(void **state) {
     for (int i = 4; i <= 66; ++i) {

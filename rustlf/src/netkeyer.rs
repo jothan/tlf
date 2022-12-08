@@ -2,12 +2,13 @@
 
 use std::cell::RefCell;
 use std::error::Error;
-use std::ffi::{c_char, c_uint, c_void, CStr, CString};
+use std::ffi::{c_char, c_int, c_uint, c_void, CStr, CString};
 use std::io::{Cursor, Write};
 use std::net::{
     Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs, UdpSocket,
 };
 use std::ops::Deref;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
@@ -17,6 +18,9 @@ use crate::{parse_cstr, tlf};
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Arc<Option<Netkeyer>>> = RefCell::new(Arc::new(None));
 }
+
+// Could be owned by the main thread if the simulator did not set it.
+static TONE: AtomicI32 = AtomicI32::new(600);
 
 pub(crate) struct Netkeyer {
     socket: UdpSocket,
@@ -240,23 +244,42 @@ impl Netkeyer {
 impl TextKeyer for Netkeyer {
     fn send_text(&mut self, text: &[u8]) {}
 }
+
 #[no_mangle]
-pub unsafe extern "C" fn write_tone() {
-    let netkeyer = NETKEYER.with(|netkeyer| {
-        if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
-            write_tone_inner(netkeyer).expect("netkeyer send error");
-        }
-    });
+pub unsafe extern "C" fn parse_tone(tonestr: *const c_char) -> c_int {
+    CStr::from_ptr(tonestr)
+        .to_str()
+        .ok()
+        .map(str::trim)
+        .and_then(|t| t.parse::<c_int>().ok())
+        .filter(|tone| *tone >= 0)
+        .unwrap_or(-1)
 }
 
-pub(crate) unsafe fn write_tone_inner(netkeyer: &Netkeyer) -> Result<(), KeyerError> {
-    let tonestr = CStr::from_ptr(&tlf::tonestr as *const c_char);
-    let tone: Option<u16> = parse_cstr(&tlf::tonestr as *const c_char);
+#[no_mangle]
+pub extern "C" fn init_tone(tone: c_int) {
+    TONE.store(tone, Ordering::SeqCst)
+}
 
-    if tonestr.to_bytes().is_empty() || tone.is_none() {
-        return Ok(());
-    }
-    let tone = tone.unwrap();
+#[no_mangle]
+pub extern "C" fn get_tone() -> c_int {
+    TONE.load(Ordering::SeqCst)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
+    let prev_tone = TONE.swap(tone, Ordering::SeqCst);
+    let netkeyer = NETKEYER.with(|netkeyer| {
+        if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
+            write_tone_inner(netkeyer, tone).expect("netkeyer send error");
+        }
+    });
+
+    return prev_tone;
+}
+
+pub(crate) unsafe fn write_tone_inner(netkeyer: &Netkeyer, tone: i32) -> Result<(), KeyerError> {
+    let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
 
     if let Err(_) = netkeyer.set_tone(tone) {
         log_message(
@@ -286,7 +309,7 @@ pub(crate) unsafe fn init_params(netkeyer: &Netkeyer) -> Result<(), KeyerError> 
     netkeyer.reset()?;
     netkeyer.set_weight(tlf::weight as i8)?;
 
-    write_tone_inner(netkeyer)?;
+    write_tone_inner(netkeyer, TONE.load(Ordering::SeqCst))?;
 
     netkeyer.set_speed(GetCWSpeed().try_into().unwrap())?;
     netkeyer.set_weight(tlf::weight as _)?;

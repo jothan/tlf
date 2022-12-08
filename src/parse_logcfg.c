@@ -463,7 +463,7 @@ static int cfg_cwtone(const cfg_arg_t arg) {
     if (rc != PARSE_OK) {
 	return rc;
     }
-    sprintf(tonestr, "%d", value);
+    init_tone(value);
     return PARSE_OK;
 }
 

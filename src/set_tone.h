@@ -21,8 +21,6 @@
 #ifndef SET_TONE_H
 #define SET_TONE_H
 
-extern char tonestr[];
-
 void set_tone(void);
 
 #endif /* end of include guard: SET_TONE_H */

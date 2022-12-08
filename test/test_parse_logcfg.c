@@ -18,6 +18,7 @@
 #include "../src/setcontest.h"
 #include "../src/set_tone.h"
 #include "../src/cabrillo_utils.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/audio.o
 // OBJECT ../src/addpfx.o
@@ -77,11 +78,6 @@ int get_total_score() {
 }
 
 void ask(char *buffer, char *what) {
-}
-
-static int wpm_spy;
-void SetCWSpeed(unsigned int wpm) {
-    wpm_spy = wpm;
 }
 
 static char rst_init_spy[100];
@@ -191,7 +187,6 @@ int setup_default(void **state) {
 
     setcontest(QSO_MODE);
 
-    tonestr[0] = 0;
     multsfile[0] = 0;
     markerfile[0] = 0;
     synclogfile[0] = 0;
@@ -990,13 +985,13 @@ void test_bandmap_d100(void **state) {
 void test_cwspeed(void **state) {
     int rc = call_parse_logcfg("CWSPEED= 18 \n");
     assert_int_equal(rc, 0);
-    assert_int_equal(wpm_spy, 18);
+    assert_int_equal(GetCWSpeed(), 18);
 }
 
 void test_cwtone(void **state) {
     int rc = call_parse_logcfg("CWTONE=765\n");
     assert_int_equal(rc, PARSE_OK);
-    assert_string_equal(tonestr, "765");
+    assert_int_equal(get_tone(), 765);
 }
 
 void test_txdelay(void **state) {

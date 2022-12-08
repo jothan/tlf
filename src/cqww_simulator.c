@@ -61,27 +61,23 @@ void set_simulator_state(simstate_t s) {
     pthread_mutex_unlock(&simulator_state_mutex);
 }
 
-const char *cw_tones[] = {
-    "625", "800", "650", "750", "700",
-    "725", "675", "775", "600", "640"
+const int cw_tones[] = {
+    625, 800, 650, 750, 700,
+    725, 675, 775, 600, 640
 };
-#define NUM_TONES   (sizeof(cw_tones) / sizeof(char*))
+#define NUM_TONES (sizeof(cw_tones) / sizeof(int))
 
 
-static char simulator_tone[5];
-static char tonecpy[5];
+static int simulator_tone;
+static int tonecpy;
 
-static void set_simulator_tone() {
-    strcpy(tonecpy, tonestr);
-    strcpy(tonestr, simulator_tone);
-    write_tone();
-
+static void set_simulator_tone(void) {
+    tonecpy = write_tone(simulator_tone);
     sendmessage("  ");
 }
 
-static void restore_tone() {
-    strcpy(tonestr, tonecpy);
-    write_tone();
+static void restore_tone(void) {
+    write_tone(tonecpy);
 }
 
 void cqww_simulator(void) {
@@ -101,7 +97,7 @@ void cqww_simulator(void) {
 
 	int this_second = get_time() % 60;
 
-	strcpy(simulator_tone, cw_tones[this_second % NUM_TONES]);
+       simulator_tone = cw_tones[this_second % NUM_TONES];
 
 	set_simulator_tone();
 
