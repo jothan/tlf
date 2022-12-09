@@ -5,6 +5,7 @@
 // OBJECT ../src/dummy.o
 
 void clear_line(int line) { abort(); }
+void clear_display(void) {}
 
 void test_SetSpeed_success(void **state) {
     for (int i = 4; i <= 66; ++i) {

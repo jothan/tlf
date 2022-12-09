@@ -48,9 +48,6 @@ char bc_hostservice[MAXNODES][16] = {
 };
 
 
-char netkeyer_hostaddress[16] = "127.0.0.1";
-int netkeyer_port = 6789;
-
 bm_config_t bm_config;
 
 char *callmaster_filename = NULL;
@@ -64,11 +61,8 @@ int check_mult(struct qso_t *qso) { return -1; }
 
 contest_config_t config_focm;
 
-static bool fldigi_on;
-bool fldigi_isenabled(void) {
-    return fldigi_on;
-}
 
+extern bool fldigi_on;
 void fldigi_toggle() {
     fldigi_on = !fldigi_on;
 }

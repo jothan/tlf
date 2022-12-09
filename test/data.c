@@ -158,6 +158,7 @@ char synclogfile[120];
 char markerfile[120] = "";
 int xplanet = MARKER_NONE;
 char fldigi_url[50] = "http://localhost:7362/RPC2";
+bool fldigi_on;
 
 char sp_return[80] = " \n";
 char cq_return[80] = " \n";
@@ -278,6 +279,8 @@ char tonestr[5] = "600";
 int cqdelay = 8;
 char wkeyerbuffer[400];
 int data_ready = 0;
+char netkeyer_hostaddress[16] = "127.0.0.1";
+int netkeyer_port = 6789;
 char keyer_device[10] = "";	// ttyS0, ttyS1, lp0-2
 bool keyer_backspace = false;
 int k_pin14;

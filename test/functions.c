@@ -99,6 +99,11 @@ int fldigi_send_text(const char *line) {
     return -1;
 }
 
+extern bool fldigi_on;
+bool fldigi_isenabled(void) {
+    return fldigi_on;
+}
+
 void handle_lan_recv(int *lantimesync) {
 }
 
