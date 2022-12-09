@@ -9,8 +9,8 @@ tlf_SOURCES = \
 	cabrillo_utils.c calledit.c callinput.c changefreq.c changepars.c \
 	change_rst.c checklogfile.c checkqtclogfile.c \
 	cleanup.c clear_display.c clusterinfo.c \
-        cqww_simulator.c cw_utils.c \
-	dxcc.c deleteqso.c \
+	cqww_simulator.c \
+	dummy.c dxcc.c deleteqso.c \
 	edit_last.c editlog.c err_utils.c \
 	fldigixmlrpc.c freq_display.c focm.c \
 	genqtclist.c \
@@ -33,7 +33,7 @@ tlf_SOURCES = \
 	showscore.c showzones.c sockserv.c speedupndown.c   \
 	stoptx.c store_qso.c sunup.c splitscreen.c startmsg.c\
 	trx_memory.c time_update.c ui_utils.c utils.c \
-	write_keyer.c writecabrillo.c \
+	writecabrillo.c \
 	zone_nr.c
 
 tlf_LDADD = @LIBM_LIB@ @PTHREAD_LIBS@ @GLIB_LIBS@ @PANEL_LIBS@ @CURSES_LIBS@ \

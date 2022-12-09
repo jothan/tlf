@@ -2,7 +2,7 @@
 
 #include "../rustlf/rust.h"
 
-// OBJECT ../src/cw_utils.o
+// OBJECT ../src/dummy.o
 
 void clear_line(int line) { abort(); }
 
