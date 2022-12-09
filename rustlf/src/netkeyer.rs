@@ -7,7 +7,6 @@ use std::io::{Cursor, Write};
 use std::net::{
     Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs, UdpSocket,
 };
-use std::ops::Deref;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
@@ -57,7 +56,7 @@ macro_rules! write_esc {
 }
 
 impl Netkeyer {
-    pub(crate) fn new(dest_addr: SocketAddr) -> std::io::Result<Netkeyer> {
+    pub(crate) fn new(dest_addr: SocketAddr) -> Result<Netkeyer, KeyerError> {
         let bind_addr: SocketAddr = match dest_addr {
             SocketAddr::V4(dest) => {
                 if dest.ip().is_loopback() {
@@ -80,13 +79,70 @@ impl Netkeyer {
         Ok(Netkeyer { socket, dest_addr })
     }
 
-    pub(crate) fn from_host_and_port(host: &str, port: u16) -> std::io::Result<Netkeyer> {
+    pub(crate) fn from_host_and_port(host: &str, port: u16) -> Result<Netkeyer, KeyerError> {
         let dest_addr = (host, port)
             .to_socket_addrs()?
             .next()
-            .ok_or(std::io::ErrorKind::NotFound)?;
+            .ok_or(std::io::Error::from(std::io::ErrorKind::NotFound))?;
 
         Netkeyer::new(dest_addr)
+    }
+
+    /// Grab keyer parameters from the global variables
+    pub(crate) unsafe fn from_globals() -> Result<Netkeyer, KeyerError> {
+        let host = unsafe { CStr::from_ptr(&tlf::netkeyer_hostaddress as *const c_char) };
+        let port = unsafe { tlf::netkeyer_port as c_uint }.try_into().unwrap();
+        let netkeyer = Netkeyer::from_host_and_port(
+            host.to_str().expect("invalid netkeyer host string"),
+            port,
+        )?;
+
+        netkeyer.reset()?;
+        netkeyer.set_weight(tlf::weight as i8)?;
+
+        netkeyer.write_tone(get_tone())?;
+
+        netkeyer.set_speed(GetCWSpeed().try_into().unwrap())?;
+        netkeyer.set_weight(tlf::weight as _)?;
+
+        let keyer_device = CStr::from_ptr(&tlf::keyer_device as *const c_char);
+
+        if !keyer_device.to_bytes().is_empty() {
+            netkeyer.set_device(keyer_device.to_bytes())?;
+        }
+
+        netkeyer.set_tx_delay(tlf::txdelay as _)?;
+        if tlf::sc_sidetone {
+            netkeyer.set_sidetone_device(b's')?;
+        }
+
+        let sc_volume = Some(tlf::sc_volume).and_then(|v| v.try_into().ok());
+        if let Some(sc_volume) = sc_volume {
+            netkeyer.set_sidetone_volume(sc_volume);
+        }
+
+        Ok(netkeyer)
+    }
+
+    pub(crate) unsafe fn write_tone(&self, tone: i32) -> Result<(), KeyerError> {
+        let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
+
+        self.set_tone(tone)?;
+
+        if tone != 0 {
+            /* work around bugs in cwdaemon:
+             * cwdaemon < 0.9.6 always set volume to 70% at change of tone freq
+             * cwdaemon >=0.9.6 do not set volume at all after change of freq,
+             * resulting in no tone output if you have a freq=0 in between
+             * So... to be sure we set the volume back to our chosen value
+             * or to 70% (like cwdaemon) if no volume got specified
+             */
+            let sc_volume: u8 = Some(tlf::sc_volume)
+                .and_then(|v| v.try_into().ok())
+                .unwrap_or(70);
+            self.set_sidetone_volume(sc_volume);
+        }
+        Ok(())
     }
 
     #[inline]
@@ -270,8 +326,8 @@ pub extern "C" fn get_tone() -> c_int {
 pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
     let prev_tone = TONE.swap(tone, Ordering::SeqCst);
     NETKEYER.with(|netkeyer| {
-        if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
-            write_tone_inner(netkeyer, tone).expect("netkeyer send error");
+        if let Some(ref netkeyer) = **netkeyer.borrow() {
+            netkeyer.write_tone(tone).expect("netkeyer send error");
         } else {
             log_message(
                 LogLevel::INFO,
@@ -284,57 +340,8 @@ pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
     prev_tone
 }
 
-pub(crate) unsafe fn write_tone_inner(netkeyer: &Netkeyer, tone: i32) -> Result<(), KeyerError> {
-    let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
-
-    netkeyer.set_tone(tone)?;
-
-    if tone != 0 {
-        /* work around bugs in cwdaemon:
-         * cwdaemon < 0.9.6 always set volume to 70% at change of tone freq
-         * cwdaemon >=0.9.6 do not set volume at all after change of freq,
-         * resulting in no tone output if you have a freq=0 in between
-         * So... to be sure we set the volume back to our chosen value
-         * or to 70% (like cwdaemon) if no volume got specified
-         */
-        let sc_volume: u8 = Some(tlf::sc_volume)
-            .and_then(|v| v.try_into().ok())
-            .unwrap_or(70);
-        netkeyer.set_sidetone_volume(sc_volume);
-    }
-    Ok(())
-}
-
-pub(crate) unsafe fn init_params(netkeyer: &Netkeyer) -> Result<(), KeyerError> {
-    netkeyer.reset()?;
-    netkeyer.set_weight(tlf::weight as i8)?;
-
-    write_tone_inner(netkeyer, get_tone())?;
-
-    netkeyer.set_speed(GetCWSpeed().try_into().unwrap())?;
-    netkeyer.set_weight(tlf::weight as _)?;
-
-    let keyer_device = CStr::from_ptr(&tlf::keyer_device as *const c_char);
-
-    if !keyer_device.to_bytes().is_empty() {
-        netkeyer.set_device(keyer_device.to_bytes())?;
-    }
-
-    netkeyer.set_tx_delay(tlf::txdelay as _)?;
-    if tlf::sc_sidetone {
-        netkeyer.set_sidetone_device(b's')?;
-    }
-
-    let sc_volume = Some(tlf::sc_volume).and_then(|v| v.try_into().ok());
-    if let Some(sc_volume) = sc_volume {
-        netkeyer.set_sidetone_volume(sc_volume);
-    }
-
-    Ok(())
-}
-
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_speed(speed: c_uint) -> CResult {
+pub extern "C" fn netkeyer_set_speed(speed: c_uint) -> CResult {
     with_netkeyer(|netkeyer| {
         speed
             .try_into()
@@ -344,12 +351,12 @@ pub unsafe extern "C" fn netkeyer_set_speed(speed: c_uint) -> CResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_ptt(ptt: bool) -> CResult {
+pub extern "C" fn netkeyer_set_ptt(ptt: bool) -> CResult {
     with_netkeyer(|netkeyer| netkeyer.set_ptt(ptt))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_weight(speed: c_int) -> CResult {
+pub extern "C" fn netkeyer_set_weight(speed: c_int) -> CResult {
     with_netkeyer(|netkeyer| {
         speed
             .try_into()
@@ -359,22 +366,22 @@ pub unsafe extern "C" fn netkeyer_set_weight(speed: c_int) -> CResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_abort() -> CResult {
+pub extern "C" fn netkeyer_abort() -> CResult {
     with_netkeyer(|netkeyer| netkeyer.abort())
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_pin14(pin14: bool) -> CResult {
+pub extern "C" fn netkeyer_set_pin14(pin14: bool) -> CResult {
     with_netkeyer(|netkeyer| netkeyer.set_pin14(pin14))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_reset() -> CResult {
+pub extern "C" fn netkeyer_reset() -> CResult {
     with_netkeyer(|netkeyer| netkeyer.reset())
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_tune(seconds: c_uint) -> CResult {
+pub extern "C" fn netkeyer_tune(seconds: c_uint) -> CResult {
     with_netkeyer(|netkeyer| {
         seconds
             .try_into()
@@ -384,7 +391,7 @@ pub unsafe extern "C" fn netkeyer_tune(seconds: c_uint) -> CResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_band_switch(bandidx: c_uint) -> CResult {
+pub extern "C" fn netkeyer_set_band_switch(bandidx: c_uint) -> CResult {
     with_netkeyer(|netkeyer| {
         bandidx
             .try_into()
@@ -394,12 +401,12 @@ pub unsafe extern "C" fn netkeyer_set_band_switch(bandidx: c_uint) -> CResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_enable_word_mode() -> CResult {
+pub extern "C" fn netkeyer_enable_word_mode() -> CResult {
     with_netkeyer(|netkeyer| netkeyer.enable_word_mode())
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult {
+pub extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult {
     with_netkeyer(|netkeyer| {
         volume
             .try_into()
@@ -410,7 +417,7 @@ pub unsafe extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult
 
 fn with_netkeyer<R: Into<CResult>, F: FnOnce(&Netkeyer) -> R>(f: F) -> CResult {
     NETKEYER.with(|netkeyer| {
-        if let Some(netkeyer) = netkeyer.borrow().deref().as_ref() {
+        if let Some(ref netkeyer) = **netkeyer.borrow() {
             f(netkeyer).into()
         } else {
             CResult::Err
