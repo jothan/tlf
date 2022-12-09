@@ -1,4 +1,4 @@
-use std::ffi::{c_int, c_void, CString, c_char, CStr};
+use std::ffi::{c_char, c_int, c_void, CStr, CString};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
@@ -115,14 +115,15 @@ pub(crate) struct PlaySoundConfig {
 
 #[no_mangle]
 pub unsafe extern "C" fn prepare_playsound(audiofile: *const c_char) -> *mut c_void {
-    let netkeyer = NETKEYER.with(|fg_netkeyer| {
-        fg_netkeyer.borrow().clone()
-    });
+    let netkeyer = NETKEYER.with(|fg_netkeyer| fg_netkeyer.borrow().clone());
 
     let audiofile = CStr::from_ptr(audiofile).to_owned();
     fn assert_send<T: Send>() {}
     let _ = assert_send::<PlaySoundConfig>;
-    let config = Box::new(PlaySoundConfig { netkeyer, audiofile });
+    let config = Box::new(PlaySoundConfig {
+        netkeyer,
+        audiofile,
+    });
     Box::into_raw(config) as *mut c_void
 }
 
@@ -131,13 +132,13 @@ pub unsafe extern "C" fn abort_playsound(config: *mut c_void) {
     std::mem::drop(Box::from_raw(config as *mut PlaySoundConfig));
 }
 
-
 #[no_mangle]
 pub unsafe extern "C" fn init_playsound(config: *mut c_void) -> *mut c_char {
-    let PlaySoundConfig { netkeyer, audiofile } = *Box::from_raw(config as *mut PlaySoundConfig);
-    NETKEYER.with(|audio_netkeyer| {
-        *audio_netkeyer.borrow_mut() = netkeyer
-    });
+    let PlaySoundConfig {
+        netkeyer,
+        audiofile,
+    } = *Box::from_raw(config as *mut PlaySoundConfig);
+    NETKEYER.with(|audio_netkeyer| *audio_netkeyer.borrow_mut() = netkeyer);
 
     audiofile.into_raw()
 }
