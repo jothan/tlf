@@ -4,7 +4,6 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use crate::netkeyer::{Netkeyer, NETKEYER};
-use crate::tlf;
 use crate::write_keyer::{write_keyer, KeyerConsumer};
 
 struct StopFlags {

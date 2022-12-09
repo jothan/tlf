@@ -20,8 +20,8 @@ pub unsafe extern "C" fn parse_qtcline(
 #[inline]
 fn parse_qtcline_inner(logline: &[u8], callsign: &mut [u8], direction: c_uint) {
     let offset = match direction {
-        crate::tlf::RECV => QTC_RECV_OFFSET,
-        crate::tlf::SEND => QTC_SEND_OFFSET,
+        tlf::RECV => QTC_RECV_OFFSET,
+        tlf::SEND => QTC_SEND_OFFSET,
         _ => unreachable!(),
     };
 
@@ -64,7 +64,7 @@ mod tests {
             parse_qtcline_inner(
                 logline.as_slice(),
                 callsign.as_mut_slice(),
-                crate::tlf::RECV,
+                tlf::RECV,
             );
 
             let callsign = unsafe { CStr::from_ptr(callsign.as_ptr() as *const i8) };

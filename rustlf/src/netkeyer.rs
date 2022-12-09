@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
 use crate::err_utils::{log_message, CResult, LogLevel};
-use crate::{parse_cstr, tlf};
+use crate::parse_cstr;
 
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Arc<Option<Netkeyer>>> = RefCell::new(Arc::new(None));

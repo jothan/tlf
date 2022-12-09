@@ -2,7 +2,6 @@ use std::ffi::{c_char, c_uint, c_void, CStr};
 use std::sync::Arc;
 
 use crate::netkeyer::Netkeyer;
-use crate::tlf;
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
 
 

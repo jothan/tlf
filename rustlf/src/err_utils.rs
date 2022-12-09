@@ -11,10 +11,10 @@ pub enum LogLevel {
 
 pub fn log_message(level: LogLevel, message: impl AsRef<CStr>) {
     unsafe {
-        let lines = crate::tlf::LINES;
-        crate::tlf::clear_line(lines - 1);
-        crate::tlf::mvaddstr(lines - 1, 0, message.as_ref().as_ptr());
-        crate::tlf::refreshp();
+        let lines = tlf::LINES;
+        tlf::clear_line(lines - 1);
+        tlf::mvaddstr(lines - 1, 0, message.as_ref().as_ptr());
+        tlf::refreshp();
 
         match level {
             LogLevel::DEBUG => (),
@@ -23,7 +23,7 @@ pub fn log_message(level: LogLevel, message: impl AsRef<CStr>) {
 
             LogLevel::ERR => {
                 sleep(Duration::from_secs(3));
-                crate::tlf::exit(crate::tlf::EXIT_FAILURE as i32);
+                tlf::exit(tlf::EXIT_FAILURE as i32);
             }
         }
     }
