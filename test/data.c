@@ -75,7 +75,7 @@ int ssbpoints;
 int cwpoints;
 bool lowband_point_mult = false;
 bool sc_sidetone;
-char sc_volume[4] = "";
+int sc_volume;
 /* LZ3NY mods */
 int my_country_points = -1;
 int my_cont_points = -1;

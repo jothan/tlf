@@ -75,3 +75,39 @@ unsigned int __wrap_sleep(unsigned int seconds) {
     return 0;
 }
 
+int receive_packet(void) {
+    return -1;
+}
+
+void rx_rtty() {
+    return;
+}
+
+int fldigi_xmlrpc_get_carrier() {
+    return -1;
+}
+
+int fldigi_get_log_call() {
+    return -1;
+}
+
+int fldigi_get_log_serial_number() {
+    return -1;
+}
+
+int fldigi_send_text(const char *line) {
+    return -1;
+}
+
+void handle_lan_recv(int *lantimesync) {
+}
+
+void gettxinfo() {
+}
+
+void cqww_simulator(void) {
+}
+
+int hamlib_keyer_send(const char *cwmesage) {
+    return -1;
+}

@@ -137,6 +137,9 @@ void handle_logging(enum log_lvl lvl, ...) {
     // empty
 }
 
+void clear_display(void) {
+}
+
 /* setup/teardown */
 int setup_default(void **state) {
     int result = chdir(SRCDIR);
