@@ -16,7 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("../src/globalvars.h")
         .header("../src/qtcvars.h")
         .header("../src/fldigixmlrpc.h")
-        .header("../src/netkeyer.h")
         .header("../src/hamlib_keyer.h")
         .header("../src/clear_display.h")
         .header("../src/background_process.h")

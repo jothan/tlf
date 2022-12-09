@@ -29,7 +29,6 @@
 #include "err_utils.h"
 #include "globalvars.h"
 #include "hamlib_keyer.h"
-#include "netkeyer.h"
 #include "sendbuf.h"
 #include "tlf.h"
 #include "tlf_curses.h"

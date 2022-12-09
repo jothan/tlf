@@ -47,7 +47,6 @@
 #include "logview.h"
 #include "messagechange.h"
 #include "muf.h"
-#include "netkeyer.h"
 #include "parse_logcfg.h"
 #include "qtcvars.h"		// Includes globalvars.h
 #include "readcalls.h"

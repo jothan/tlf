@@ -41,7 +41,6 @@
 #include "ignore_unused.h"
 #include "keystroke_names.h"
 #include "libgen.h"
-#include "netkeyer.h"
 #include "time_update.h"
 #include "tlf.h"
 #include "tlf_curses.h"

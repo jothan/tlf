@@ -37,7 +37,6 @@
 #include "globalvars.h"
 #include "keystroke_names.h"
 #include "lancode.h"
-#include "netkeyer.h"
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "rust.h"

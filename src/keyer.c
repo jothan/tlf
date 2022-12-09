@@ -32,7 +32,6 @@
 #include "clear_display.h"
 #include "globalvars.h"
 #include "keystroke_names.h"
-#include "netkeyer.h"
 #include "nicebox.h"		// Includes curses.h
 #include "sendbuf.h"
 #include "speedupndown.h"

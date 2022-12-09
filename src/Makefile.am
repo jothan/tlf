@@ -22,7 +22,7 @@ tlf_SOURCES = \
 	lancode.c last10.c listmessages.c log_to_disk.c log_utils.c \
 	logit.c logview.c \
 	main.c makelogline.c messagechange.c muf.c \
-	nicebox.c note.c netkeyer.c\
+	nicebox.c note.c \
 	paccdx.c parse_logcfg.c printcall.c \
 	qrb.c qsonr_to_str.c qtc_log.c qtcwin.c qtcutil.c readcabrillo.c \
 	readcalls.c readqtccalls.c readctydata.c recall_exchange.c rules.c \
@@ -59,7 +59,7 @@ noinst_HEADERS = \
 	lancode.h last10.h listmessages.h log_utils.h \
 	log_to_disk.h logit.h logview.h \
 	makelogline.h messagechange.h muf.h \
-	nicebox.h note.h netkeyer.h\
+	nicebox.h note.h \
 	paccdx.h parse_logcfg.h printcall.h \
 	qrb.h qsonr_to_str.h qtc_log.h qtcvars.h qtcwin.h qtcutil.h \
 	readcalls.h readqtccalls.h readctydata.h recall_exchange.h \
@@ -71,5 +71,5 @@ noinst_HEADERS = \
 	splitscreen.h startmsg.h stoptx.h store_qso.h sunup.h \
 	time_update.h tlf.h tlf_curses.h tlf_panel.h trx_memory.h \
 	ui_utils.h utils.h \
-	write_keyer.h writecabrillo.h \
+	writecabrillo.h \
 	zone_nr.h

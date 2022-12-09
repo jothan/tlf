@@ -54,7 +54,6 @@
 #include "keystroke_names.h"
 #include "lancode.h"
 #include "muf.h"
-#include "netkeyer.h"
 #include "nicebox.h"		// Includes curses.h
 #include "note.h"
 #include "printcall.h"

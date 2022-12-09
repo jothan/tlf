@@ -46,7 +46,6 @@
 #include "initial_exchange.h"
 #include "lancode.h"
 #include "logit.h"
-#include "netkeyer.h"
 #include "parse_logcfg.h"
 #include "qtcvars.h"		// Includes globalvars.h
 #include "readctydata.h"
@@ -299,6 +298,8 @@ int digikeyer = NO_KEYER;
 
 char keyer_device[10] = "";	// ttyS0, ttyS1, lp0-2 for net_keyer
 bool keyer_backspace = false;   // disabled
+int netkeyer_port = 6789;
+char netkeyer_hostaddress[16] = "127.0.0.1";
 
 char controllerport[80] = "/dev/ttyS0"; // for GMFSK or MFJ-1278
 char rttyoutput[120];		// where to GMFSK digimode output

@@ -27,7 +27,6 @@
 
 #include "err_utils.h"
 #include "globalvars.h"
-#include "netkeyer.h"
 #include "nicebox.h"	// Includes curses.h
 #include "set_tone.h"
 #include "tlf.h"
