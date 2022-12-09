@@ -1,3 +1,6 @@
+// unsafe, unsafe everywhere
+#![allow(clippy::missing_safety_doc)]
+
 use std::{
     ffi::{c_char, CStr},
     str::FromStr,
