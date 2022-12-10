@@ -29,6 +29,14 @@ pub fn log_message(level: LogLevel, message: impl AsRef<CStr>) {
     }
 }
 
+macro_rules! log_message_static {
+    ($level:expr,$msg:expr) => {
+        log_message($level, CStr::from_bytes_with_nul(concat!($msg, "\x00").as_bytes()).expect("invalid message"));
+    };
+}
+
+pub(crate) use log_message_static;
+
 #[repr(i32)]
 pub enum CResult {
     Ok = 0,

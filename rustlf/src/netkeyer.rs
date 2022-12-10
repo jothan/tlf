@@ -11,7 +11,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
-use crate::err_utils::{log_message, CResult, LogLevel};
+use crate::err_utils::{log_message, log_message_static, CResult, LogLevel};
 use crate::parse_cstr;
 
 thread_local! {
@@ -329,10 +329,7 @@ pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
         if let Some(ref netkeyer) = **netkeyer.borrow() {
             netkeyer.write_tone(tone).expect("netkeyer send error");
         } else {
-            log_message(
-                LogLevel::INFO,
-                CStr::from_bytes_with_nul(b"keyer not active; switching to SSB\x00").unwrap(),
-            );
+            log_message_static!(LogLevel::INFO, "keyer not active; switching to SSB");
             tlf::trxmode = tlf::SSBMODE as _;
         }
     });
