@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec ./configure --prefix=/usr --enable-dependency-tracking --enable-fldigi-xmlrpc
