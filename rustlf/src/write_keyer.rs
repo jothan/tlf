@@ -141,7 +141,7 @@ fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkey
 
         let rig = rig.expect("no rig when needed");
         if let Err(e) = rig.keyer_send(data) {
-            log_message(LogLevel::WARN, format!("CW send error: {}", e));
+            log_message(LogLevel::WARN, format!("CW send error: {e}"));
         }
     } else if cwkeyer == tlf::MFJ1278_KEYER || digikeyer == tlf::MFJ1278_KEYER {
         let path = unsafe { CStr::from_ptr(&tlf::controllerport as *const i8) }.to_string_lossy();

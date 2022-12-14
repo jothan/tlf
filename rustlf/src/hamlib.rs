@@ -64,7 +64,7 @@ impl From<c_int> for GenericError {
 
 impl Display for GenericError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        with_rigerror(self.0, |msg| write!(f, "{}", msg))
+        with_rigerror(self.0, |msg| write!(f, "{msg}"))
     }
 }
 
@@ -152,8 +152,8 @@ impl RigConfig {
             return Ok(out);
         }
 
-        for directive in rigconf.split(",") {
-            let (param, value) = directive.split_once("=").ok_or(Error::InvalidRigconf)?;
+        for directive in rigconf.split(',') {
+            let (param, value) = directive.split_once('=').ok_or(Error::InvalidRigconf)?;
             if param.is_empty() {
                 return Err(Error::InvalidRigconf);
             }
@@ -285,7 +285,7 @@ impl Rig {
             let e = retval.into();
             log_message(
                 LogLevel::WARN,
-                format!("Could not read CW speed from rig : {}", e),
+                format!("Could not read CW speed from rig : {e}"),
             );
             Err(e)
         }
@@ -491,7 +491,7 @@ impl RigState {
             }
         } */
 
-        if let Err(_) = out.change_freq(rig, previous.as_ref()) {
+        if out.change_freq(rig, previous.as_ref()).is_err() {
             return out;
         }
 
@@ -511,7 +511,9 @@ impl RigState {
                         }
                     }
                 }
-                Err(e) => log_message(LogLevel::WARN, format!("Problem with rig link: {}", e)),
+                Err(e) => {
+                    print_error(e);
+                }
             }
         }
 
@@ -525,7 +527,7 @@ impl RigState {
             return Err(GenericError(-1).into());
         }
 
-        let freq = self.freq.clone().unwrap();
+        let freq = self.freq.unwrap();
 
         if freq >= unsafe { tlf::bandcorner[0][0] } as tlf::freq_t {
             unsafe { tlf::freq = freq };
@@ -536,13 +538,11 @@ impl RigState {
         // Handle this by subscribing to the above state update
         unsafe { tlf::bandfrequency[self.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq };
 
-        let oldbandidx = previous.map(|s| s.bandidx).flatten();
+        let oldbandidx = previous.and_then(|s| s.bandidx);
 
         if self.bandidx != oldbandidx {
             // band change on trx
-            if let Err(e) = unsafe { handle_trx_bandswitch(rig, self, freq) } {
-                log_message(LogLevel::WARN, format!("Problem with rig link: {}", e));
-            }
+            unsafe { handle_trx_bandswitch(rig, self, freq) }.map_err(print_error)?;
         }
 
         Ok(())
@@ -747,7 +747,7 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
 }
 
 fn print_error(e: GenericError) -> GenericError {
-    log_message(LogLevel::WARN, format!("Problem with rig link: {}", e));
+    log_message(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
 }
 

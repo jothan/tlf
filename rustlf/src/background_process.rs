@@ -75,7 +75,10 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
     loop {
         background_process_wait();
-        if let Err(_) = worker.process_sleep(&mut rig, Duration::from_millis(10)) {
+        if worker
+            .process_sleep(&mut rig, Duration::from_millis(10))
+            .is_err()
+        {
             // Exit thread when disconnected.
             break std::ptr::null_mut();
         }
@@ -113,7 +116,9 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
         tlf::handle_lan_recv(&mut lantimesync);
 
         // get freq info from TRX
-        rig.as_mut().map(|r| r.poll());
+        if let Some(rig) = rig.as_mut() {
+            rig.poll();
+        }
     }
 }
 
