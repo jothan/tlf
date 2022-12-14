@@ -3,11 +3,19 @@ use std::time::{Duration, Instant};
 use crossbeam::channel::{bounded, Receiver, RecvTimeoutError, Sender, TryRecvError};
 use oneshot;
 
-type WorkItem<C> = Box<dyn FnOnce(C) + Send + 'static>;
+type WorkItem<C> = Box<dyn FnOnce(&mut C) + Send + 'static>;
 
-#[derive(Clone)]
 pub(crate) struct WorkSender<C> {
     handle: Sender<WorkItem<C>>,
+}
+
+// derive gets the bounds wrong
+impl<C> Clone for WorkSender<C> {
+    fn clone(&self) -> Self {
+        WorkSender {
+            handle: self.handle.clone(),
+        }
+    }
 }
 
 pub(crate) enum Error {
@@ -16,13 +24,13 @@ pub(crate) enum Error {
 }
 
 impl<C> WorkSender<C> {
-    pub(crate) fn schedule_raw<F: FnOnce(C) -> T + Send + 'static, T: Send + 'static>(
+    pub(crate) fn schedule_raw<F: FnOnce(&mut C) -> T + Send + 'static, T: Send + 'static>(
         &self,
         f: F,
     ) -> Result<oneshot::Receiver<T>, Error> {
         let (sender, receiver) = oneshot::channel();
 
-        let work = |c| {
+        let work = |c: &mut C| {
             sender.send(f(c)).expect("receiver dissapeared");
         };
 
@@ -33,14 +41,17 @@ impl<C> WorkSender<C> {
         Ok(receiver)
     }
 
-    pub(crate) fn schedule_wait<F: FnOnce(C) -> T + Send + 'static, T: Send + 'static>(
+    pub(crate) fn schedule_wait<F: FnOnce(&mut C) -> T + Send + 'static, T: Send + 'static>(
         &self,
         f: F,
     ) -> Result<T, Error> {
         self.schedule_raw(f)?.recv().map_err(|_| Error::WorkDropped)
     }
 
-    pub(crate) fn schedule_nowait<F: FnOnce(C) + Send + 'static>(&self, f: F) -> Result<(), Error> {
+    pub(crate) fn schedule_nowait<F: FnOnce(&mut C) + Send + 'static>(
+        &self,
+        f: F,
+    ) -> Result<(), Error> {
         self.handle
             .send(Box::new(f))
             .map_err(|_| Error::SendError)?;
@@ -53,11 +64,11 @@ pub(crate) struct Worker<C> {
     handle: Receiver<WorkItem<C>>,
 }
 
-impl<C: Clone> Worker<C> {
-    pub(crate) fn process_pending(&self, context: C) -> Result<(), TryRecvError> {
+impl<C> Worker<C> {
+    pub(crate) fn process_pending(&self, context: &mut C) -> Result<(), TryRecvError> {
         loop {
             match self.handle.try_recv() {
-                Ok(work) => work(context.clone()),
+                Ok(work) => work(context),
                 Err(TryRecvError::Empty) => break Ok(()),
                 Err(e) => break Err(e),
             }
@@ -66,12 +77,12 @@ impl<C: Clone> Worker<C> {
 
     pub(crate) fn process_until(
         &self,
-        context: C,
+        context: &mut C,
         deadline: Instant,
     ) -> Result<(), RecvTimeoutError> {
         loop {
             match self.handle.recv_deadline(deadline) {
-                Ok(work) => work(context.clone()),
+                Ok(work) => work(context),
                 Err(RecvTimeoutError::Timeout) => break Ok(()),
                 Err(e) => break Err(e),
             }
@@ -80,7 +91,7 @@ impl<C: Clone> Worker<C> {
 
     pub(crate) fn process_sleep(
         &self,
-        context: C,
+        context: &mut C,
         sleep: Duration,
     ) -> Result<(), RecvTimeoutError> {
         let deadline = std::time::Instant::now() + sleep;

@@ -1,6 +1,4 @@
-use std::cell::RefCell;
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
-use std::rc::Rc;
 use std::sync::{Arc, Condvar, Mutex};
 
 use std::time::Duration;
@@ -67,10 +65,8 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
         mut keyer_consumer,
         netkeyer,
         worker,
-        rig,
+        mut rig,
     } = *Box::from_raw(config as *mut BackgroundConfig);
-
-    let rig = Rc::new(RefCell::new(rig));
 
     let netkeyer = Option::as_ref(&*netkeyer);
 
@@ -79,7 +75,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
     loop {
         background_process_wait();
-        if let Err(_) = worker.process_sleep(rig.clone(), Duration::from_millis(10)) {
+        if let Err(_) = worker.process_sleep(&mut rig, Duration::from_millis(10)) {
             // Exit thread when disconnected.
             break std::ptr::null_mut();
         }
@@ -111,9 +107,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
         if !is_background_process_stopped() {
             tlf::cqww_simulator();
-            let rig = &mut *rig.borrow_mut();
-            let rig = Option::as_mut(rig);
-            write_keyer(&mut keyer_consumer, rig, netkeyer);
+            write_keyer(&mut keyer_consumer, rig.as_mut(), netkeyer);
         }
 
         tlf::handle_lan_recv(&mut lantimesync);
@@ -122,7 +116,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
     }
 }
 
-pub(crate) type BackgroundContext = Rc<RefCell<Option<Rig>>>;
+pub(crate) type BackgroundContext = Option<Rig>;
 
 pub(crate) struct PlaySoundConfig {
     pub(crate) netkeyer: Arc<Option<Netkeyer>>,

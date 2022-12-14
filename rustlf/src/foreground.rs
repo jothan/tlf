@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::ffi::{c_char, c_void};
 use std::sync::Arc;
