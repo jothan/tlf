@@ -5,7 +5,7 @@ use oneshot;
 
 type WorkItem<C> = Box<dyn FnOnce(&mut C) + Send + 'static>;
 
-pub(crate) struct WorkSender<C> {
+pub(crate) struct WorkSender<C: ?Sized> {
     handle: Sender<WorkItem<C>>,
 }
 
@@ -24,7 +24,7 @@ pub(crate) enum Error {
     WorkDropped,
 }
 
-impl<C> WorkSender<C> {
+impl<C: ?Sized> WorkSender<C> {
     pub(crate) fn schedule_raw<F: FnOnce(&mut C) -> T + Send + 'static, T: Send + 'static>(
         &self,
         f: F,
@@ -61,11 +61,11 @@ impl<C> WorkSender<C> {
     }
 }
 
-pub(crate) struct Worker<C> {
+pub(crate) struct Worker<C: ?Sized> {
     handle: Receiver<WorkItem<C>>,
 }
 
-impl<C> Worker<C> {
+impl<C: ?Sized> Worker<C> {
     #[allow(unused)]
     pub(crate) fn process_pending(&self, context: &mut C) -> Result<(), TryRecvError> {
         loop {
@@ -101,7 +101,7 @@ impl<C> Worker<C> {
     }
 }
 
-pub(crate) fn workqueue<C>(size: usize) -> (WorkSender<C>, Worker<C>) {
+pub(crate) fn workqueue<C: ?Sized>(size: usize) -> (WorkSender<C>, Worker<C>) {
     let (tx, rx) = bounded(size);
 
     (WorkSender { handle: tx }, Worker { handle: rx })
