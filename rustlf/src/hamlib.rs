@@ -1,8 +1,11 @@
 use std::{
-    ffi::{c_int, c_uint, CStr, CString},
+    ffi::{c_int, c_uint, c_ulong, CStr, CString},
     fmt::Display,
     mem::MaybeUninit,
-    sync::Mutex,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
     time::{Duration, Instant},
 };
 
@@ -10,9 +13,11 @@ use libc::{c_char, c_long};
 use ptr::Unique;
 
 use crate::{
+    background_process::{with_background, BackgroundContext},
     bands::freq2band,
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
+    workqueue::WorkSender,
 };
 
 #[derive(Debug)]
@@ -47,6 +52,10 @@ pub(crate) enum Error {
 #[derive(Debug)]
 pub(crate) struct GenericError(c_int);
 
+static USE_PTT: AtomicBool = AtomicBool::new(false);
+pub(crate) static RIG_SEND_MORSE: AtomicBool = AtomicBool::new(false);
+pub(crate) static RIG_STOP_MORSE: AtomicBool = AtomicBool::new(false);
+
 impl From<c_int> for GenericError {
     fn from(code: c_int) -> GenericError {
         GenericError(code)
@@ -77,10 +86,10 @@ pub(crate) struct Rig {
     can_send_morse: bool,
     can_stop_morse: bool,
     cw_bandwidth: Option<tlf::pbwidth_t>,
-    has_ptt: bool,
     use_ptt: bool,
     ptt_state: bool,
     use_keyer: bool,
+    state: Option<RigState>,
 }
 
 unsafe impl Send for Rig {}
@@ -178,15 +187,13 @@ impl RigConfig {
 
         let caps = unsafe { &*rig.as_ref().caps };
         /* If CAT PTT is wanted, test for CAT capability of rig backend. */
-        let has_ptt;
+        let has_ptt = caps.ptt_type == tlf::ptt_type_t_RIG_PTT_RIG;
 
-        unsafe {
-            has_ptt = caps.ptt_type == tlf::ptt_type_t_RIG_PTT_RIG;
-
-            if self.want_ptt && !has_ptt {
-                showmsg!("Controlling PTT via Hamlib is not supported for that rig!");
-            }
+        if self.want_ptt && !has_ptt {
+            showmsg!("Controlling PTT via Hamlib is not supported for that rig!");
         }
+        let use_ptt = has_ptt && self.want_ptt;
+        USE_PTT.fetch_or(use_ptt, Ordering::SeqCst);
 
         let can_send_morse = caps.send_morse.is_some();
         let can_stop_morse = caps.stop_morse.is_some();
@@ -197,10 +204,10 @@ impl RigConfig {
             can_stop_morse,
             opened: false,
             cw_bandwidth: self.cw_bandwidth,
-            has_ptt,
-            use_ptt: has_ptt && self.want_ptt,
+            use_ptt,
             ptt_state: false,
             use_keyer: self.use_keyer,
+            state: None,
         };
 
         let rig_mut = unsafe { rig.handle.as_mut() };
@@ -244,7 +251,12 @@ impl RigConfig {
 
         if self.use_keyer {
             // Set the initial speed from the current radio setting
-            crate::cw_utils::SetCWSpeed(rig.get_keyer_speed()?);
+            let rig_speed = rig.get_keyer_speed()?;
+            SetCWSpeed(rig_speed);
+            let rounded_speed = GetCWSpeed();
+            if rig_speed != rounded_speed {
+                rig.set_keyer_speed(rounded_speed)?;
+            }
         }
 
         // TODO: do proper mode setting
@@ -313,13 +325,30 @@ impl Rig {
         }
     }
 
-    pub(crate) fn set_cw_mode(&mut self) -> Result<(), Error> {
+    pub(crate) fn stop_keyer(&mut self) -> Result<(), GenericError> {
+        if !self.can_stop_morse {
+            return Ok(());
+        }
+
+        let retval = unsafe { tlf::rig_stop_morse(self.handle.as_mut(), tlf::RIG_VFO_CURR) };
+        if retval == tlf::RIG_OK {
+            Ok(())
+        } else {
+            Err(retval.into())
+        }
+    }
+
+    pub(crate) fn set_mode(
+        &mut self,
+        mode: tlf::rmode_t,
+        bandwidth: Option<tlf::pbwidth_t>,
+    ) -> Result<(), GenericError> {
         let retval = unsafe {
             tlf::rig_set_mode(
                 self.handle.as_mut(),
                 tlf::RIG_VFO_CURR,
-                tlf::RIG_MODE_CW,
-                self.cw_bandwidth.unwrap_or(tlf::RIG_PASSBAND_NOCHANGE),
+                mode,
+                bandwidth.unwrap_or(tlf::RIG_PASSBAND_NOCHANGE),
             )
         };
 
@@ -330,7 +359,25 @@ impl Rig {
         }
     }
 
-    pub(crate) fn set_ptt(&mut self, ptt: bool) -> Result<(), Error> {
+    pub(crate) fn set_cw_mode(&mut self) -> Result<(), GenericError> {
+        self.set_mode(tlf::RIG_MODE_CW, self.cw_bandwidth)
+    }
+
+    pub(crate) fn set_ssb_mode(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
+        self.set_mode(get_ssb_mode(freq), None)
+    }
+
+    pub(crate) fn reset_rit(&mut self) -> Result<(), GenericError> {
+        let retval = unsafe { tlf::rig_set_rit(self.handle.as_mut(), tlf::RIG_VFO_CURR, 0) };
+
+        if retval == tlf::RIG_OK {
+            Ok(())
+        } else {
+            Err(retval.into())
+        }
+    }
+
+    pub(crate) fn set_ptt(&mut self, ptt: bool) -> Result<(), GenericError> {
         if !self.use_ptt || self.ptt_state == ptt {
             return Ok(());
         }
@@ -352,6 +399,29 @@ impl Rig {
         } else {
             Err(retval.into())
         }
+    }
+
+    pub(crate) fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
+        let retval = unsafe { tlf::rig_set_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, freq) };
+
+        if retval == tlf::RIG_OK {
+            Ok(())
+        } else {
+            Err(retval.into())
+        }
+    }
+
+    pub(crate) fn poll(&mut self) {
+        let previous = self.state.take();
+        self.state = Some(RigState::poll(self, previous));
+    }
+
+    pub(crate) fn can_send_morse(&self) -> bool {
+        self.can_send_morse
+    }
+
+    pub(crate) fn can_stop_morse(&self) -> bool {
+        self.can_stop_morse
     }
 }
 
@@ -431,11 +501,14 @@ impl RigState {
                     if GetCWSpeed() != rig_speed {
                         // Should the rounded wpm value be written back to the radio if different ?
                         SetCWSpeed(rig_speed);
-                    }
+                        let new_speed = GetCWSpeed();
 
-                    // TODO: send this to main thread
-                    unsafe {
-                        tlf::display_cw_speed(GetCWSpeed());
+                        if new_speed != rig_speed {
+                            // TODO: send this to main thread
+                            unsafe {
+                                tlf::display_cw_speed(GetCWSpeed());
+                            }
+                        }
                     }
                 }
                 Err(e) => log_message(LogLevel::WARN, format!("Problem with rig link: {}", e)),
@@ -502,22 +575,12 @@ unsafe fn handle_trx_bandswitch(
         width = rig.cw_bandwidth;
     }
 
-    if mode.is_none() {
-        return Ok(()); // no change was requested
-    }
+    if let Some(mode) = mode {
+        rig.set_mode(mode, width)?;
 
-    let retval = tlf::rig_set_mode(
-        rig.handle.as_mut(),
-        tlf::RIG_VFO_CURR,
-        mode.unwrap(),
-        width.unwrap_or(tlf::RIG_PASSBAND_NOCHANGE),
-    );
-
-    if retval != tlf::RIG_OK {
-        return Err(retval.into());
+        state.mode = Some(mode);
+        state.bandwidth = width.or(state.bandwidth);
     }
-    state.mode = mode;
-    state.bandwidth = width.or(state.bandwidth);
 
     Ok(())
 }
@@ -532,18 +595,168 @@ fn get_ssb_mode(freq: tlf::freq_t) -> tlf::rmode_t {
     }
 }
 
-static RIGERROR_LOCK: Mutex<()> = Mutex::new(());
-
-pub(crate) fn rigerror(error: c_int) -> String {
-    // rigerror uses a non threadsafe buffer
-    let _ugly = RIGERROR_LOCK.lock();
-    let msg = unsafe { CStr::from_ptr(tlf::rigerror(error)) };
-    msg.to_string_lossy().into_owned()
-}
-
 pub(crate) fn with_rigerror<F: FnOnce(&str) -> T, T>(error: c_int, f: F) -> T {
-    // rigerror uses a non threadsafe buffer
+    // rigerror uses an internal static, non threadsafe, buffer
+    static RIGERROR_LOCK: Mutex<()> = Mutex::new(());
+
     let _ugly = RIGERROR_LOCK.lock();
     let msg = unsafe { CStr::from_ptr(tlf::rigerror(error)) }.to_string_lossy();
     f(msg.as_ref())
+}
+
+#[no_mangle]
+pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
+    if !unsafe { tlf::trx_control } {
+        return; // no rig control, ignore request
+    }
+
+    if hertz > 0. {
+        let mut hertz = hertz - unsafe { tlf::fldigi_get_carrier() as tlf::freq_t };
+        if hertz < 0. {
+            hertz = 0.;
+        }
+
+        with_background(|bg| {
+            bg.schedule_nowait(move |rig| {
+                let _ = rig.as_mut().unwrap().set_freq(hertz).map_err(print_error);
+            })
+            .expect("background send error")
+        });
+    } else if hertz < 0. {
+        with_background(|bg| outfreq_request(hertz, bg));
+        return;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_outfreq_wait(hertz: tlf::freq_t) {
+    let hertz = hertz - unsafe { tlf::fldigi_get_carrier() as tlf::freq_t };
+    assert!(hertz >= 0.);
+
+    with_background(|bg| {
+        bg.schedule_wait(move |rig| {
+            let _ = rig.as_mut().unwrap().set_freq(hertz).map_err(print_error);
+        })
+        .expect("background send error")
+    });
+}
+
+fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
+    let request: i32 = hertz as _;
+
+    match request {
+        tlf::SETCWMODE => bg.schedule_nowait(|rig| {
+            let _ = rig.as_mut().unwrap().set_cw_mode().map_err(print_error);
+        }),
+
+        tlf::SETSSBMODE => bg.schedule_nowait(move |rig| {
+            let _ = rig
+                .as_mut()
+                .unwrap()
+                .set_ssb_mode(hertz)
+                .map_err(print_error);
+        }),
+
+        tlf::SETDIGIMODE => {
+            let mut mode: tlf::rmode_t = unsafe { tlf::digi_mode };
+            let is_fldigi = unsafe { tlf::digikeyer } == tlf::FLDIGI as c_int;
+
+            if mode == tlf::RIG_MODE_NONE as c_ulong {
+                if is_fldigi {
+                    mode = tlf::RIG_MODE_USB;
+                } else {
+                    mode = tlf::RIG_MODE_LSB;
+                }
+            }
+
+            bg.schedule_nowait(move |rig| {
+                let _ = rig
+                    .as_mut()
+                    .unwrap()
+                    .set_mode(mode, None)
+                    .map_err(print_error);
+            })
+        }
+
+        tlf::RESETRIT => bg.schedule_nowait(|rig| {
+            let _ = rig.as_mut().unwrap().reset_rit().map_err(print_error);
+        }),
+
+        _ => panic!("Unknown set_outfreq request: {request}"),
+    }
+    .expect("background send error");
+}
+
+#[no_mangle]
+pub extern "C" fn hamlib_keyer_set_speed(cwspeed: c_int) -> c_int {
+    with_background(|bg| {
+        bg.schedule_wait(move |rig| {
+            match rig.as_mut().unwrap().set_keyer_speed(cwspeed as c_uint) {
+                Ok(_) => tlf::RIG_OK,
+                Err(e) => e.0,
+            }
+        })
+        .expect("background send error")
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn hamlib_keyer_get_speed(speed: *mut c_int) -> c_int {
+    let speed_result = with_background(|bg| {
+        bg.schedule_wait(|rig| rig.as_mut().unwrap().get_keyer_speed())
+            .expect("background send error")
+    });
+
+    match speed_result {
+        Ok(s) => {
+            unsafe { *speed = s as c_int };
+            tlf::RIG_OK
+        }
+        Err(e) => e.0,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn hamlib_keyer_stop() -> c_int {
+    let stop_result = with_background(|bg| {
+        bg.schedule_wait(|rig| rig.as_mut().unwrap().stop_keyer())
+            .expect("background send error")
+    });
+
+    match stop_result {
+        Ok(_) => tlf::RIG_OK,
+        Err(e) => e.0,
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn hamlib_use_ptt() -> bool {
+    USE_PTT.load(Ordering::SeqCst)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
+    let ptt_result = with_background(|bg| {
+        bg.schedule_wait(move |rig| rig.as_mut().unwrap().set_ptt(ptt))
+            .expect("background send error")
+    });
+    match ptt_result {
+        Ok(_) => tlf::RIG_OK,
+        Err(e) => e.0,
+    }
+}
+
+fn print_error(e: GenericError) -> GenericError {
+    log_message(LogLevel::WARN, format!("Problem with rig link: {}", e));
+    e
+}
+
+#[no_mangle]
+pub extern "C" fn rig_has_send_morse() -> bool {
+    RIG_SEND_MORSE.load(Ordering::SeqCst)
+}
+
+#[no_mangle]
+pub extern "C" fn rig_has_stop_morse() -> bool {
+    RIG_STOP_MORSE.load(Ordering::SeqCst)
 }

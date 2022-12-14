@@ -1,10 +1,11 @@
 use std::cell::RefCell;
-use std::ffi::{c_char, c_void};
+use std::ffi::{c_char, c_void, c_uint};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use crate::background_process::BackgroundContext;
 use crate::err_utils::{showmsg, shownr};
-use crate::hamlib::{Error, Rig, RigConfig};
+use crate::hamlib::{set_outfreq, Error, Rig, RigConfig, RIG_SEND_MORSE, RIG_STOP_MORSE};
 use crate::netkeyer::Netkeyer;
 use crate::workqueue::{workqueue, WorkSender};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
@@ -60,7 +61,7 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
 
     let rig_result = RigConfig::from_globals().and_then(|config| config.open_rig());
 
-    if rig_result.is_err() {
+    let Ok(rig) = rig_result else {
         showmsg!("Continue without rig control Y/(N)?");
         if (tlf::key_get() as u8).to_ascii_uppercase() != b'Y' {
             tlf::endwin();
@@ -69,7 +70,18 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
         tlf::trx_control = false;
         showmsg!("Disabling rig control!");
         std::thread::sleep(std::time::Duration::from_secs(1));
+        return rig_result;
+    };
+
+    RIG_SEND_MORSE.store(rig.can_send_morse(), Ordering::SeqCst);
+    RIG_STOP_MORSE.store(rig.can_stop_morse(), Ordering::SeqCst);
+
+    match tlf::trxmode as c_uint {
+        tlf::SSBMODE => set_outfreq(tlf::SETSSBMODE as _),
+        tlf::DIGIMODE => set_outfreq(tlf::SETDIGIMODE as _),
+        tlf::CWMODE => set_outfreq(tlf::SETCWMODE as _),
+        _ => (),
     }
 
-    rig_result
+    Ok(rig)
 }

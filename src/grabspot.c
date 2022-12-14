@@ -32,6 +32,7 @@
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "trx_memory.h"
+#include "rust.h"
 
 void send_bandswitch(freq_t outfreq);
 

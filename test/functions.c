@@ -112,7 +112,3 @@ void gettxinfo() {
 
 void cqww_simulator(void) {
 }
-
-int hamlib_keyer_send(const char *cwmesage) {
-    return -1;
-}

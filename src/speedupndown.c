@@ -28,7 +28,6 @@
 #include "clear_display.h"
 #include "err_utils.h"
 #include "globalvars.h"
-#include "hamlib_keyer.h"
 #include "sendbuf.h"
 #include "tlf.h"
 #include "tlf_curses.h"

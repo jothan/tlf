@@ -112,7 +112,8 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
         tlf::handle_lan_recv(&mut lantimesync);
 
-        tlf::gettxinfo(); /* get freq info from TRX */
+        // get freq info from TRX
+        rig.as_mut().map(|r| r.poll());
     }
 }
 
@@ -161,4 +162,12 @@ pub unsafe extern "C" fn init_playsound(config: *mut c_void) -> *mut c_char {
 #[no_mangle]
 pub unsafe extern "C" fn close_playsound(audiofile: *mut c_char) {
     std::mem::drop(CString::from_raw(audiofile));
+}
+
+pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>(f: F) -> T {
+    BACKGROUND_HANDLE.with(|bg| {
+        let bg = bg.borrow();
+        let bg = bg.as_ref().expect("called from wrong thread");
+        f(bg)
+    })
 }

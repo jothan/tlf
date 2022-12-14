@@ -43,6 +43,7 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "cleanup.h"
+#include "rust.h"
 
 pthread_mutex_t disk_mutex = PTHREAD_MUTEX_INITIALIZER;
 

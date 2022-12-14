@@ -420,11 +420,12 @@ void *play_thread(void *config) {
 	    audiofile, 0, NULL);
     g_regex_unref(regex);
     close_playsound(audiofile);
+    bool use_hamlib = hamlib_use_ptt();
 
     /* CAT PTT wanted and available, use it. */
-    if (rigptt == CAT_PTT_USE) {
+    if (use_hamlib) {
 	/* Request PTT On */
-	rigptt |= CAT_PTT_ON;
+	hamlib_set_ptt(true);
     } else {		/* Fall back to netkeyer interface */
 	netkeyer_set_ptt(true);
     }
@@ -434,9 +435,9 @@ void *play_thread(void *config) {
     g_free(playcommand);
 
     /* CAT PTT wanted, available, and active. */
-    if (rigptt == (CAT_PTT_USE | CAT_PTT_ACTIVE)) {
+    if (use_hamlib) {
 	/* Request PTT Off */
-	rigptt |= CAT_PTT_OFF;
+	hamlib_set_ptt(false);
     } else {		/* Fall back to netkeyer interface */
 	netkeyer_set_ptt(false);
     }

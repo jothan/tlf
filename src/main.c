@@ -42,7 +42,6 @@
 #include "getmessages.h"
 #include "getwwv.h"
 #include "globalvars.h"		// Includes glib.h and tlf.h
-#include "hamlib_keyer.h"
 #include "initial_exchange.h"
 #include "lancode.h"
 #include "logit.h"
@@ -64,6 +63,7 @@
 #include "readcabrillo.h"
 #include "ui_utils.h"
 #include "rust.h"
+#include "gettxinfo.h"
 
 #include <config.h>
 
@@ -329,8 +329,6 @@ bool bmautograb = false;
 
 /*-------------------------------------rigctl-------------------------------*/
 int myrig_model = 0;            /* unset */
-RIG *my_rig;			/* handle to rig (instance) */
-pthread_mutex_t rig_lock = PTHREAD_MUTEX_INITIALIZER;
 rmode_t rmode;			/* radio mode of operation */
 pbwidth_t width;
 vfo_t vfo;			/* vfo selection */
@@ -725,37 +723,6 @@ static int databases_load() {
     return EXIT_SUCCESS;
 }
 
-static void hamlib_init() {
-
-    rig_set_debug(RIG_DEBUG_NONE);
-
-    if (no_trx_control) {
-	trx_control = false;
-    }
-
-    if (!trx_control) {
-	return;
-    }
-
-    shownr("Rig model number is", myrig_model);
-    shownr("Rig speed is", serial_rate);
-
-    showmsg("Trying to start rig control");
-
-    int status = init_tlf_rig();
-
-    if (status != 0) {
-	showmsg("Continue without rig control Y/(N)?");
-	if (toupper(key_get()) != 'Y') {
-	    endwin();
-	    exit(1);
-	}
-	trx_control = false;
-	showmsg("Disabling rig control!");
-	sleep(1);
-    }
-}
-
 static void fldigi_init() {
 #ifdef HAVE_LIBXMLRPC
     int status;
@@ -904,10 +871,6 @@ static void tlf_cleanup() {
     if (trxmode != CWMODE || cwkeyer != NET_KEYER)
 	deinit_controller();
 
-    if (my_rig) {
-	close_tlf_rig(my_rig);
-    }
-
 #ifdef HAVE_LIBXMLRPC
     if (digikeyer == FLDIGI) {
 	fldigi_xmlrpc_cleanup();
@@ -1017,7 +980,6 @@ int main(int argc, char *argv[]) {
 //              if (strlen(synclogfile) > 0)
 //                      synclog(synclogfile);
 
-    //hamlib_init();
     fldigi_init();
     lan_init();
     keyer_init();

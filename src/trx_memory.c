@@ -25,6 +25,7 @@
 #include "globalvars.h"
 #include "time_update.h"
 #include "tlf.h"
+#include "rust.h"
 
 
 typedef struct {

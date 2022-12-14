@@ -18,6 +18,7 @@ impl<C> Clone for WorkSender<C> {
     }
 }
 
+#[derive(Debug)]
 pub(crate) enum Error {
     SendError,
     WorkDropped,
@@ -65,6 +66,7 @@ pub(crate) struct Worker<C> {
 }
 
 impl<C> Worker<C> {
+    #[allow(unused)]
     pub(crate) fn process_pending(&self, context: &mut C) -> Result<(), TryRecvError> {
         loop {
             match self.handle.try_recv() {

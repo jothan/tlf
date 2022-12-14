@@ -1,8 +1,5 @@
-#![allow(unused)]
-
 use std::cell::RefCell;
-use std::error::Error;
-use std::ffi::{c_char, c_int, c_uint, c_void, CStr, CString};
+use std::ffi::{c_char, c_int, c_uint, CStr};
 use std::io::{Cursor, Write};
 use std::net::{
     Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs, UdpSocket,
@@ -11,8 +8,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
-use crate::err_utils::{log_message, log_message_static, CResult, LogLevel};
-use crate::parse_cstr;
+use crate::err_utils::{log_message_static, CResult, LogLevel};
 
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Arc<Option<Netkeyer>>> = RefCell::new(Arc::new(None));
@@ -51,7 +47,7 @@ fn extract_buf<const N: usize>(cursor: &Cursor<[u8; N]>) -> &[u8] {
 
 macro_rules! write_esc {
     ($buf:expr,$fmt:expr,$value:expr) => {
-        write!($buf, concat!("\x1b", $fmt), $value);
+        write!($buf, concat!("\x1b", $fmt), $value).expect("buffer write errror");
     };
 }
 
@@ -118,7 +114,7 @@ impl Netkeyer {
 
         let sc_volume = Some(tlf::sc_volume).and_then(|v| v.try_into().ok());
         if let Some(sc_volume) = sc_volume {
-            netkeyer.set_sidetone_volume(sc_volume);
+            netkeyer.set_sidetone_volume(sc_volume)?;
         }
 
         Ok(netkeyer)
@@ -140,7 +136,7 @@ impl Netkeyer {
             let sc_volume: u8 = Some(tlf::sc_volume)
                 .and_then(|v| v.try_into().ok())
                 .unwrap_or(70);
-            self.set_sidetone_volume(sc_volume);
+            self.set_sidetone_volume(sc_volume)?;
         }
         Ok(())
     }
@@ -184,7 +180,8 @@ impl Netkeyer {
         self.simple_command(b'4')
     }
 
-    pub(crate) fn stop(&self) -> Result<(), KeyerError> {
+    #[allow(unused)]
+    pub(crate) fn exit(&self) -> Result<(), KeyerError> {
         self.simple_command(b'5')
     }
 
@@ -295,10 +292,6 @@ impl Netkeyer {
         let _ = self.socket.send_to(text, self.dest_addr)?;
         Ok(())
     }
-}
-
-impl TextKeyer for Netkeyer {
-    fn send_text(&mut self, text: &[u8]) {}
 }
 
 #[no_mangle]

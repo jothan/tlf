@@ -12,7 +12,7 @@ use std::{
 use bbqueue::{BBBuffer, Consumer, Producer};
 
 use crate::err_utils::log_message_static;
-use crate::hamlib::{rigerror, GenericError, Rig};
+use crate::hamlib::Rig;
 use crate::{
     err_utils::{log_message, LogLevel},
     netkeyer::Netkeyer,

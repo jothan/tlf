@@ -25,6 +25,7 @@
 #include "time_update.h"
 #include "ui_utils.h"
 #include "gettxinfo.h"
+#include "rust.h"
 
 
 void change_freq(void) {
@@ -40,67 +41,64 @@ void change_freq(void) {
 
 	freq_display();
 
-	if (get_outfreq() == 0) {
-	    // last request has been processed, check keys again
-	    int x = key_poll();
+        int x = key_poll();
 
-	    int deltaf = 0;
+        int deltaf = 0;
 
-	    switch (x) {
+        switch (x) {
 
-		// Up arrow, raise frequency by 100 Hz.
-		case KEY_UP: {
-		    deltaf = 100;
-		    break;
-		}
+            // Up arrow, raise frequency by 100 Hz.
+            case KEY_UP: {
+                deltaf = 100;
+                break;
+            }
 
-		// Down arrow, lower frequency by 100 Hz.
-		case KEY_DOWN: {
-		    deltaf = -100;
-		    break;
-		}
+            // Down arrow, lower frequency by 100 Hz.
+            case KEY_DOWN: {
+                deltaf = -100;
+                break;
+            }
 
-		// Right arrow, raise frequency by 20 Hz.
-		case KEY_RIGHT: {
-		    deltaf = 20;
-		    break;
-		}
+            // Right arrow, raise frequency by 20 Hz.
+            case KEY_RIGHT: {
+                deltaf = 20;
+                break;
+            }
 
-		// Left arrow, lower frequency by 20 Hz.
-		case KEY_LEFT: {
-		    deltaf = -20;
-		    break;
-		}
+            // Left arrow, lower frequency by 20 Hz.
+            case KEY_LEFT: {
+                deltaf = -20;
+                break;
+            }
 
-		// <Page-Up>, raise frequency by 500 Hz.
-		case KEY_PPAGE: {
-		    deltaf = 500;
-		    break;
-		}
+            // <Page-Up>, raise frequency by 500 Hz.
+            case KEY_PPAGE: {
+                deltaf = 500;
+                break;
+            }
 
-		// <Page-Down>, lower frequency by 500 Hz.
-		case KEY_NPAGE: {
-		    deltaf = -500;
-		    break;
-		}
+            // <Page-Down>, lower frequency by 500 Hz.
+            case KEY_NPAGE: {
+                deltaf = -500;
+                break;
+            }
 
-		// no key
-		case ERR: {
-		    break;
-		}
+            // no key
+            case ERR: {
+                break;
+            }
 
-		// any other key: exit frequency change mode
-		default: {
-		    brkflg = 1;
-		    break;
-		}
+            // any other key: exit frequency change mode
+            default: {
+                brkflg = 1;
+                break;
+            }
 
-	    }
+        }
 
-	    if (deltaf) {
-		set_outfreq(freq + deltaf);
-	    }
-	}
+        if (deltaf) {
+            set_outfreq_wait(freq + deltaf);
+        }
 
 	if (brkflg) {
 	    break;
