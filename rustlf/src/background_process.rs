@@ -1,9 +1,14 @@
+use std::cell::RefCell;
 use std::ffi::{c_char, c_int, c_void, CStr, CString};
+use std::rc::Rc;
 use std::sync::{Arc, Condvar, Mutex};
-use std::thread::sleep;
+
 use std::time::Duration;
 
+use crate::foreground::BACKGROUND_HANDLE;
+use crate::hamlib::Rig;
 use crate::netkeyer::{Netkeyer, NETKEYER};
+use crate::workqueue::{WorkSender, Worker};
 use crate::write_keyer::{write_keyer, KeyerConsumer};
 
 struct StopFlags {
@@ -52,6 +57,8 @@ fn background_process_wait() {
 pub(crate) struct BackgroundConfig {
     pub(crate) keyer_consumer: KeyerConsumer,
     pub(crate) netkeyer: Arc<Option<Netkeyer>>,
+    pub(crate) worker: Worker<BackgroundContext>,
+    pub(crate) rig: Option<Rig>,
 }
 
 #[no_mangle]
@@ -59,7 +66,11 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
     let BackgroundConfig {
         mut keyer_consumer,
         netkeyer,
+        worker,
+        rig,
     } = *Box::from_raw(config as *mut BackgroundConfig);
+
+    let rig = Rc::new(RefCell::new(rig));
 
     let netkeyer = Option::as_ref(&*netkeyer);
 
@@ -68,8 +79,10 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
     loop {
         background_process_wait();
-
-        sleep(Duration::from_millis(10));
+        if let Err(_) = worker.process_sleep(rig.clone(), Duration::from_millis(10)) {
+            // Exit thread when disconnected.
+            break std::ptr::null_mut();
+        }
 
         unsafe { tlf::receive_packet() };
         unsafe { tlf::rx_rtty() };
@@ -98,7 +111,9 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
         if !is_background_process_stopped() {
             tlf::cqww_simulator();
-            write_keyer(&mut keyer_consumer, netkeyer);
+            let rig = &mut *rig.borrow_mut();
+            let rig = Option::as_mut(rig);
+            write_keyer(&mut keyer_consumer, rig, netkeyer);
         }
 
         tlf::handle_lan_recv(&mut lantimesync);
@@ -107,20 +122,25 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
     }
 }
 
+pub(crate) type BackgroundContext = Rc<RefCell<Option<Rig>>>;
+
 pub(crate) struct PlaySoundConfig {
     pub(crate) netkeyer: Arc<Option<Netkeyer>>,
+    pub(crate) bg_thread: Option<WorkSender<BackgroundContext>>,
     pub(crate) audiofile: CString,
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn prepare_playsound(audiofile: *const c_char) -> *mut c_void {
     let netkeyer = NETKEYER.with(|fg_netkeyer| fg_netkeyer.borrow().clone());
+    let bg_thread = BACKGROUND_HANDLE.with(|bg_thread| bg_thread.borrow().clone());
 
     let audiofile = CStr::from_ptr(audiofile).to_owned();
     fn assert_send<T: Send>() {}
     let _ = assert_send::<PlaySoundConfig>;
     let config = Box::new(PlaySoundConfig {
         netkeyer,
+        bg_thread,
         audiofile,
     });
     Box::into_raw(config) as *mut c_void
@@ -135,9 +155,11 @@ pub unsafe extern "C" fn abort_playsound(config: *mut c_void) {
 pub unsafe extern "C" fn init_playsound(config: *mut c_void) -> *mut c_char {
     let PlaySoundConfig {
         netkeyer,
+        bg_thread,
         audiofile,
     } = *Box::from_raw(config as *mut PlaySoundConfig);
     NETKEYER.with(|audio_netkeyer| *audio_netkeyer.borrow_mut() = netkeyer);
+    BACKGROUND_HANDLE.with(|audio_bg| *audio_bg.borrow_mut() = bg_thread);
 
     audiofile.into_raw()
 }

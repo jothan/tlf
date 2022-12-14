@@ -326,3 +326,7 @@ static void handle_trx_bandswitch(const freq_t freq) {
 
 }
 
+void display_cw_speed(unsigned int wpm) {
+    attron(COLOR_PAIR(C_HEADER) | A_STANDOUT);
+    mvprintw(0, 14, "%2u", wpm);
+}

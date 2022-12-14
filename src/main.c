@@ -895,8 +895,8 @@ static void mark_GPL_seen() {
  */
 static void tlf_cleanup() {
     if (pthread_self() != background_thread) {
-	pthread_cancel(background_thread);
-	pthread_join(background_thread, NULL);
+	//pthread_cancel(background_thread);
+	//pthread_join(background_thread, NULL);
     }
 
     cleanup_telnet();
@@ -987,6 +987,10 @@ int main(int argc, char *argv[]) {
 	endwin();
 	exit(EXIT_FAILURE);
     }
+
+    if (no_trx_control) {
+	trx_control = false;
+    }
     void *bg_config = foreground_init();
 
 
@@ -1013,7 +1017,7 @@ int main(int argc, char *argv[]) {
 //              if (strlen(synclogfile) > 0)
 //                      synclog(synclogfile);
 
-    hamlib_init();
+    //hamlib_init();
     fldigi_init();
     lan_init();
     keyer_init();

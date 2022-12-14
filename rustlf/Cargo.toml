@@ -8,14 +8,20 @@ crate-type=["staticlib"]
 
 [profile.release]
 panic = "abort"
+codegen-units = 1
+lto = true
 
 [profile.dev]
 panic = "abort"
 
 [dependencies]
+tlf = { path = "tlf-sys" }
 bbqueue = "0.5.1"
 thiserror = "1.0.37"
-tlf = { path = "tlf-sys" }
+crossbeam = "0.8"
+oneshot = "0.1"
+ptr = "0.2"
+libc = "0.2"
 
 [build-dependencies]
 cbindgen = "0.24.3"

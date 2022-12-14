@@ -11,6 +11,8 @@ use std::{
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
+use crate::err_utils::log_message_static;
+use crate::hamlib::{rigerror, GenericError, Rig};
 use crate::{
     err_utils::{log_message, LogLevel},
     netkeyer::Netkeyer,
@@ -87,7 +89,11 @@ fn combine_segments<'a>((left, right): (&'a [u8], &'a [u8])) -> Cow<'a, [u8]> {
     }
 }
 
-pub(crate) fn write_keyer(consumer: &mut KeyerConsumer, netkeyer: Option<&Netkeyer>) {
+pub(crate) fn write_keyer(
+    consumer: &mut KeyerConsumer,
+    rig: Option<&mut Rig>,
+    netkeyer: Option<&Netkeyer>,
+) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     if trxmode != tlf::CWMODE && trxmode != tlf::DIGIMODE {
         return;
@@ -112,11 +118,11 @@ pub(crate) fn write_keyer(consumer: &mut KeyerConsumer, netkeyer: Option<&Netkey
         CString::new(combine_segments(grant.bufs())).expect("Unexpected 0 byte in keyer data");
     grant.release(len);
 
-    keyer_dispatch(data, netkeyer);
+    keyer_dispatch(data, rig, netkeyer);
 }
 
 #[inline]
-fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
+fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkeyer>) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     let cwkeyer = unsafe { tlf::cwkeyer } as u32;
     let digikeyer = unsafe { tlf::digikeyer } as u32;
@@ -128,17 +134,14 @@ fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
             .send_text(data.as_bytes())
             .expect("netkeyer send error");
     } else if cwkeyer == tlf::HAMLIB_KEYER {
-        let mut data_bytes = data.into_bytes();
+        let mut data_bytes = data.into_bytes_with_nul();
         // Filter out unsupported speed directives
         data_bytes.retain(|c| *c != b'+' && *c != b'-');
+        let data = CStr::from_bytes_with_nul(&data_bytes).unwrap();
 
-        let data = CString::new(data_bytes).unwrap();
-        let error = unsafe { tlf::hamlib_keyer_send(data.as_ptr()) };
-        if error != tlf::rig_errcode_e_RIG_OK as i32 {
-            let str_error = unsafe { tlf::rigerror(error) };
-            let str_error = unsafe { CStr::from_ptr(str_error) }.to_string_lossy();
-            let str_error = CString::new(format!("CW send error: {str_error}")).unwrap();
-            log_message(LogLevel::WARN, str_error);
+        let rig = rig.expect("no rig when needed");
+        if let Err(e) = rig.keyer_send(data) {
+            log_message(LogLevel::WARN, format!("CW send error: {}", e));
         }
     } else if cwkeyer == tlf::MFJ1278_KEYER || digikeyer == tlf::MFJ1278_KEYER {
         let path = unsafe { CStr::from_ptr(&tlf::controllerport as *const i8) }.to_string_lossy();
@@ -152,10 +155,7 @@ fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
                 let _ = file.write_all(data.as_bytes());
             }
             Err(_) => {
-                log_message(
-                    LogLevel::WARN,
-                    CString::new("1278 not active. Switching to SSB mode.").unwrap(),
-                );
+                log_message_static!(LogLevel::WARN, "1278 not active. Switching to SSB mode.");
                 unsafe {
                     tlf::trxmode = tlf::SSBMODE as c_int;
                     tlf::clear_display();
@@ -167,10 +167,7 @@ fn keyer_dispatch(data: CString, netkeyer: Option<&Netkeyer>) {
         let path = OsStr::from_bytes(path.to_bytes());
 
         if path.is_empty() {
-            log_message(
-                LogLevel::WARN,
-                CString::new("No modem file specified!").unwrap(),
-            );
+            log_message_static!(LogLevel::WARN, "No modem file specified!");
         }
 
         let mut data_bytes = data.into_bytes();

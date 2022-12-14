@@ -32,5 +32,6 @@ void set_outfreq(freq_t hertz);
 freq_t get_outfreq();
 
 void gettxinfo(void);
+void display_cw_speed(unsigned int wpm);
 
 #endif /* GETTXINFO_H */

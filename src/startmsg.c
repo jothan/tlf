@@ -57,7 +57,7 @@ static int has_room_for_message() {
 	return 0;
 }
 
-void showmsg(char *message) {
+void showmsg(const char *message) {
     if (!has_room_for_message())
 	clearmsg_wait();
     mvaddstr(linectr, 0, message);
@@ -66,7 +66,7 @@ void showmsg(char *message) {
 }
 //---------------------------------------------------------------
 
-void shownr(char *message, int nr) {
+void shownr(const char *message, int nr) {
     if (!has_room_for_message())
 	clearmsg_wait();
     mvprintw(linectr, 0, "%s %d", message, nr);
@@ -75,7 +75,7 @@ void shownr(char *message, int nr) {
 }
 //----------------------------------------------------------------
 
-void showstring(char *message1, char *message2) {
+void showstring(const char *message1, const char *message2) {
     if (!has_room_for_message())
 	clearmsg_wait();
     mvprintw(linectr, 0, "%s %s", message1, message2);

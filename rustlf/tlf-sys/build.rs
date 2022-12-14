@@ -6,8 +6,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let includes = glib
         .include_paths
         .iter()
-        .map(|path| format!("-I{}", path.to_string_lossy()))
-        .chain(std::iter::once("-I..".to_owned()));
+        .map(|path| format!("-I{}", path.to_string_lossy()));
 
     let bindings = bindgen::Builder::default()
         .clang_arg("-F../../src")
@@ -17,13 +16,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("qtcvars.h")
         .header("fldigixmlrpc.h")
         .header("hamlib_keyer.h")
-        .header("src/clear_display.h")
+        .header("clear_display.h")
         .header("background_process.h")
-        .header("src/splitscreen.h")
-        .header("src/rtty.h")
-        .header("src/cqww_simulator.h")
-        .header("src/gettxinfo.h")
-        .header("src/set_tone.h")
+        .header("splitscreen.h")
+        .header("rtty.h")
+        .header("cqww_simulator.h")
+        .header("gettxinfo.h")
+        .header("set_tone.h")
+        .header("sendqrg.h")
+        .header("startmsg.h")
+        .header("ui_utils.h")
+        .header("gettxinfo.h")
+        .header("bands.h")
+        .header("callinput.h")
         .header("/usr/include/curses.h")
         .clang_args(includes)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
