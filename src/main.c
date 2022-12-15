@@ -767,48 +767,6 @@ static void packet_init() {
 }
 
 
-static void keyer_init() {
-    if (cwkeyer == NET_KEYER) {
-	showmsg("CW-Keyer is cwdaemon");
-        // Initialized later by rust foreground_init()
-    }
-
-    if (cwkeyer == HAMLIB_KEYER) {
-	showmsg("CW-Keyer is Hamlib");
-	if (!trx_control) {
-	    showmsg("Radio control is not activated!!");
-	    sleep(1);
-	    endwin();
-	    exit(EXIT_FAILURE);
-	}
-	if (!rig_has_send_morse()) {
-	    showmsg("Rig does not support CW via Hamlib");
-	    sleep(1);
-	    endwin();
-	    exit(EXIT_FAILURE);
-	}
-	if (!rig_has_stop_morse()) {
-#if HAMLIB_VERSION >= 400
-	    showmsg("Rig does not support stopping CW!!");
-#else
-	    showmsg("Hamlib version does not support stopping CW!!");
-#endif
-	    showmsg("Continue anyway Y/(N)?");
-	    if (toupper(key_get()) != 'Y') {
-		endwin();
-		exit(1);
-	    }
-	}
-    }
-
-    if (cwkeyer == MFJ1278_KEYER || digikeyer == MFJ1278_KEYER ||
-	    digikeyer == GMFSK) {
-	init_controller();
-    }
-
-}
-
-
 static void show_GPL() {
     printw("\n\n\n");
     printw("           TTTTT  L      FFFFF\n");
@@ -979,7 +937,6 @@ int main(int argc, char *argv[]) {
 
     fldigi_init();
     lan_init();
-    keyer_init();
 
     show_station_info();
 

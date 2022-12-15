@@ -1,11 +1,11 @@
 use std::cell::RefCell;
-use std::ffi::{c_char, c_void, c_uint};
-use std::sync::atomic::Ordering;
+use std::ffi::{c_char, c_int, c_uint, c_void};
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::background_process::BackgroundContext;
 use crate::err_utils::{showmsg, shownr};
-use crate::hamlib::{set_outfreq, Error, Rig, RigConfig, RIG_SEND_MORSE, RIG_STOP_MORSE};
+use crate::hamlib::{set_outfreq, Error, Rig, RigConfig};
 use crate::netkeyer::Netkeyer;
 use crate::workqueue::{workqueue, WorkSender};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
@@ -25,16 +25,7 @@ pub extern "C" fn foreground_init() -> *mut c_void {
 
     let keyer_consumer = keyer_queue_init();
 
-    let netkeyer = if (unsafe { tlf::cwkeyer } == tlf::NET_KEYER as _) {
-        Some(unsafe { Netkeyer::from_globals() }.expect("netkeyer init error"))
-    } else {
-        None
-    };
-    let netkeyer = Arc::new(netkeyer);
-
-    crate::netkeyer::NETKEYER.with(|fg_netkeyer| {
-        *fg_netkeyer.borrow_mut() = netkeyer.clone();
-    });
+    let netkeyer = unsafe { keyer_init(&rig) };
 
     fn assert_send<T: Send>() {}
     let _ = assert_send::<BackgroundConfig>;
@@ -73,9 +64,6 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
         return rig_result;
     };
 
-    RIG_SEND_MORSE.store(rig.can_send_morse(), Ordering::SeqCst);
-    RIG_STOP_MORSE.store(rig.can_stop_morse(), Ordering::SeqCst);
-
     match tlf::trxmode as c_uint {
         tlf::SSBMODE => set_outfreq(tlf::SETSSBMODE as _),
         tlf::DIGIMODE => set_outfreq(tlf::SETDIGIMODE as _),
@@ -84,4 +72,55 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
     }
 
     Ok(rig)
+}
+
+unsafe fn keyer_init(rig: &Option<Rig>) -> Arc<Option<Netkeyer>> {
+    let netkeyer = if tlf::cwkeyer == tlf::NET_KEYER as _ {
+        showmsg!("CW-Keyer is cwdaemon");
+        Some(unsafe { Netkeyer::from_globals() }.expect("netkeyer init error"))
+    } else {
+        None
+    };
+    let netkeyer = Arc::new(netkeyer);
+
+    crate::netkeyer::NETKEYER.with(|fg_netkeyer| {
+        *fg_netkeyer.borrow_mut() = netkeyer.clone();
+    });
+
+    if tlf::cwkeyer == tlf::HAMLIB_KEYER as c_int {
+        showmsg!("CW-Keyer is Hamlib");
+        match rig {
+            None => {
+                showmsg!("Radio control is not activated!!");
+                std::thread::sleep(Duration::from_secs(1));
+                tlf::endwin();
+                std::process::exit(1);
+            }
+            Some(rig) => {
+                if !rig.can_send_morse() {
+                    showmsg!("Rig does not support CW via Hamlib");
+                    std::thread::sleep(Duration::from_secs(1));
+                    tlf::endwin();
+                    std::process::exit(1);
+                }
+                if !rig.can_stop_morse() {
+                    showmsg!("Rig does not support stopping CW!!");
+                    showmsg!("Continue anyway Y/(N)?");
+                    if (tlf::key_get() as u8).to_ascii_uppercase() != b'Y' {
+                        tlf::endwin();
+                        std::process::exit(1);
+                    }
+                }
+            }
+        }
+    }
+
+    if tlf::cwkeyer == tlf::MFJ1278_KEYER as c_int
+        || tlf::digikeyer == tlf::MFJ1278_KEYER as c_int
+        || tlf::digikeyer == tlf::GMFSK as c_int
+    {
+        tlf::init_controller();
+    }
+
+    netkeyer
 }

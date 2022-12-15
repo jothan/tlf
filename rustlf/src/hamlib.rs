@@ -32,6 +32,7 @@ pub(crate) struct RigConfig {
     use_keyer: bool,
     cw_bandwidth: Option<tlf::pbwidth_t>,
     want_ptt: bool,
+    trxmode: c_uint,
 }
 
 #[derive(Debug)]
@@ -56,8 +57,6 @@ pub(crate) enum Error {
 pub(crate) struct GenericError(c_int);
 
 static USE_PTT: AtomicBool = AtomicBool::new(false);
-pub(crate) static RIG_SEND_MORSE: AtomicBool = AtomicBool::new(false);
-pub(crate) static RIG_STOP_MORSE: AtomicBool = AtomicBool::new(false);
 
 impl From<c_int> for GenericError {
     fn from(code: c_int) -> GenericError {
@@ -157,6 +156,7 @@ impl RigConfig {
             use_keyer: tlf::cwkeyer == tlf::HAMLIB_KEYER as c_int,
             cw_bandwidth,
             want_ptt: tlf::rigptt,
+            trxmode: tlf::trxmode as c_uint,
         })
     }
 
@@ -271,9 +271,12 @@ impl RigConfig {
             }
         }
 
-        // TODO: do proper mode setting
-        rig.set_cw_mode()?;
-
+        match self.trxmode {
+            tlf::SSBMODE => set_outfreq(tlf::SETSSBMODE as _),
+            tlf::DIGIMODE => set_outfreq(tlf::SETDIGIMODE as _),
+            tlf::CWMODE => set_outfreq(tlf::SETCWMODE as _),
+            _ => (),
+        }
         Ok(rig)
     }
 }
@@ -727,14 +730,4 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
 fn print_error(e: GenericError) -> GenericError {
     log_message(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
-}
-
-#[no_mangle]
-pub extern "C" fn rig_has_send_morse() -> bool {
-    RIG_SEND_MORSE.load(Ordering::SeqCst)
-}
-
-#[no_mangle]
-pub extern "C" fn rig_has_stop_morse() -> bool {
-    RIG_STOP_MORSE.load(Ordering::SeqCst)
 }
