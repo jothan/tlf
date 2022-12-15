@@ -80,6 +80,21 @@ impl From<c_int> for Error {
     }
 }
 
+fn retval_to_result(retval: c_int) -> Result<(), GenericError> {
+    if retval == tlf::RIG_OK {
+        Ok(())
+    } else {
+        Err(retval.into())
+    }
+}
+
+fn result_to_retval(result: Result<(), GenericError>) -> c_int {
+    match result {
+        Ok(_) => tlf::RIG_OK,
+        Err(e) => e.0,
+    }
+}
+
 pub(crate) struct Rig {
     handle: Unique<tlf::RIG>,
     opened: bool,
@@ -278,17 +293,15 @@ impl Rig {
                 value.as_mut_ptr(),
             )
         };
-
-        if retval == tlf::RIG_OK {
-            Ok(unsafe { value.assume_init().i as c_uint })
-        } else {
-            let e = retval.into();
-            log_message(
-                LogLevel::WARN,
-                format!("Could not read CW speed from rig : {e}"),
-            );
-            Err(e)
-        }
+        retval_to_result(retval)
+            .map(|_| unsafe { value.assume_init().i as c_uint })
+            .map_err(|e| {
+                log_message(
+                    LogLevel::WARN,
+                    format!("Could not read CW speed from rig : {e}"),
+                );
+                e
+            })
     }
 
     pub(crate) fn set_keyer_speed(&mut self, speed: c_uint) -> Result<(), GenericError> {
@@ -302,12 +315,7 @@ impl Rig {
                 value,
             )
         };
-
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn keyer_send(&mut self, message: impl AsRef<CStr>) -> Result<(), GenericError> {
@@ -318,11 +326,7 @@ impl Rig {
                 message.as_ref().as_ptr(),
             )
         };
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn stop_keyer(&mut self) -> Result<(), GenericError> {
@@ -331,11 +335,7 @@ impl Rig {
         }
 
         let retval = unsafe { tlf::rig_stop_morse(self.handle.as_mut(), tlf::RIG_VFO_CURR) };
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn set_mode(
@@ -351,12 +351,7 @@ impl Rig {
                 bandwidth.unwrap_or(tlf::RIG_PASSBAND_NOCHANGE),
             )
         };
-
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn set_cw_mode(&mut self) -> Result<(), GenericError> {
@@ -369,12 +364,7 @@ impl Rig {
 
     pub(crate) fn reset_rit(&mut self) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_rit(self.handle.as_mut(), tlf::RIG_VFO_CURR, 0) };
-
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn set_ptt(&mut self, ptt: bool) -> Result<(), GenericError> {
@@ -388,27 +378,16 @@ impl Rig {
             tlf::ptt_t_RIG_PTT_OFF
         };
 
-        let retval;
-        unsafe {
-            retval = tlf::rig_set_ptt(self.handle.as_mut(), tlf::RIG_VFO_CURR, hl_ptt);
-        }
+        let retval = unsafe { tlf::rig_set_ptt(self.handle.as_mut(), tlf::RIG_VFO_CURR, hl_ptt) };
+        retval_to_result(retval)?;
 
-        if retval == tlf::RIG_OK {
-            self.ptt_state = ptt;
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        self.ptt_state = ptt;
+        Ok(())
     }
 
     pub(crate) fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, freq) };
-
-        if retval == tlf::RIG_OK {
-            Ok(())
-        } else {
-            Err(retval.into())
-        }
+        retval_to_result(retval)
     }
 
     pub(crate) fn poll(&mut self) {
@@ -624,7 +603,6 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
         });
     } else if hertz < 0. {
         with_background(|bg| outfreq_request(hertz, bg));
-        return;
     }
 }
 
@@ -705,15 +683,9 @@ pub unsafe extern "C" fn hamlib_keyer_get_speed(speed: *mut c_int) -> c_int {
     let speed_result = with_background(|bg| {
         bg.schedule_wait(|rig| rig.as_mut().unwrap().get_keyer_speed())
             .expect("background send error")
-    });
-
-    match speed_result {
-        Ok(s) => {
-            unsafe { *speed = s as c_int };
-            tlf::RIG_OK
-        }
-        Err(e) => e.0,
-    }
+    })
+    .map(|s| unsafe { *speed = s as c_int });
+    result_to_retval(speed_result)
 }
 
 #[no_mangle]
@@ -722,11 +694,7 @@ pub unsafe extern "C" fn hamlib_keyer_stop() -> c_int {
         bg.schedule_wait(|rig| rig.as_mut().unwrap().stop_keyer())
             .expect("background send error")
     });
-
-    match stop_result {
-        Ok(_) => tlf::RIG_OK,
-        Err(e) => e.0,
-    }
+    result_to_retval(stop_result)
 }
 
 #[no_mangle]
@@ -740,10 +708,7 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
         bg.schedule_wait(move |rig| rig.as_mut().unwrap().set_ptt(ptt))
             .expect("background send error")
     });
-    match ptt_result {
-        Ok(_) => tlf::RIG_OK,
-        Err(e) => e.0,
-    }
+    result_to_retval(ptt_result)
 }
 
 fn print_error(e: GenericError) -> GenericError {
