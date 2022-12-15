@@ -20,6 +20,9 @@ use crate::{
     workqueue::WorkSender,
 };
 
+const ENIMPL: c_int = -tlf::RIG_ENIMPL;
+const ENAVAIL: c_int = -tlf::RIG_ENAVAIL;
+
 #[derive(Debug)]
 pub(crate) struct RigConfig {
     model: tlf::rig_model_t,
@@ -249,18 +252,12 @@ impl RigConfig {
         }
         rig.opened = true;
 
-        let mut rigfreq: tlf::freq_t = 0.0;
-        let mut vfo: tlf::vfo_t = 0;
-
-        let mut retval = unsafe { tlf::rig_get_vfo(rig.handle.as_mut(), &mut vfo) }; /* initialize RIG_VFO_CURR */
-        if retval == tlf::RIG_OK || retval == -tlf::RIG_ENIMPL || retval == -tlf::RIG_ENAVAIL {
-            retval =
-                unsafe { tlf::rig_get_freq(rig.handle.as_mut(), tlf::RIG_VFO_CURR, &mut rigfreq) };
+        // Initialize RIG_VFO_CURR
+        let rigfreq = match rig.get_vfo() {
+            Ok(_) | Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => rig.get_freq(),
+            Err(e) => Err(e),
         }
-
-        if retval != tlf::RIG_OK {
-            return Err(retval.into());
-        }
+        .map_err(print_error)?;
 
         shownr!("Freq =", rigfreq as c_int);
 
@@ -385,6 +382,19 @@ impl Rig {
         Ok(())
     }
 
+    pub(crate) fn get_vfo(&mut self) -> Result<tlf::vfo_t, GenericError> {
+        let mut vfo = 0;
+        let retval = unsafe { tlf::rig_get_vfo(self.handle.as_mut(), &mut vfo) };
+        retval_to_result(retval).map(|_| vfo)
+    }
+
+    pub(crate) fn get_freq(&mut self) -> Result<tlf::freq_t, GenericError> {
+        let mut freq = 0.;
+        let retval =
+            unsafe { tlf::rig_get_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, &mut freq) };
+        retval_to_result(retval).map(|_| freq)
+    }
+
     pub(crate) fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, freq) };
         retval_to_result(retval)
@@ -424,20 +434,18 @@ impl RigState {
         }
 
         // Initialize RIG_VFO_CURR
-        let mut vfo = 0;
-        let retval = unsafe { tlf::rig_get_vfo(rig.handle.as_mut(), &mut vfo) };
-        if retval == tlf::RIG_OK {
+        let vfo_result = rig.get_vfo().map(|vfo| {
             out.vfo = Some(vfo);
-        }
-
-        if out.vfo.is_some() || retval == -tlf::RIG_ENIMPL || retval == -tlf::RIG_ENAVAIL {
-            let mut freq = 0.;
-            let retval =
-                unsafe { tlf::rig_get_freq(rig.handle.as_mut(), tlf::RIG_VFO_CURR, &mut freq) };
-            if retval == tlf::RIG_OK {
-                out.freq = Some(freq);
+            vfo
+        });
+        match vfo_result {
+            Ok(_) | Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => {
+                if let Ok(freq) = rig.get_freq() {
+                    out.freq = Some(freq);
+                }
             }
-        }
+            _ => (),
+        };
 
         if out.freq.is_some() {
             let mut mode = 0;
