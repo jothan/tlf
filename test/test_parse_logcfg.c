@@ -19,6 +19,7 @@
 #include "../src/set_tone.h"
 #include "../src/cabrillo_utils.h"
 #include "../src/rust.h"
+#include "../src/fldigixmlrpc.h"
 
 // OBJECT ../src/audio.o
 // OBJECT ../src/addpfx.o
@@ -63,8 +64,9 @@ contest_config_t config_focm;
 
 
 extern bool fldigi_on;
-void fldigi_toggle() {
+bool fldigi_toggle(void) {
     fldigi_on = !fldigi_on;
+    return fldigi_on;
 }
 
 int get_total_score() {
@@ -133,6 +135,10 @@ void handle_logging(enum log_lvl lvl, ...) {
 
 void clear_display(void) {
 }
+
+void shownr(const char *message, int nr) {}
+void init_controller(void) {}
+void display_cw_speed(unsigned int wpm) {}
 
 /* setup/teardown */
 int setup_default(void **state) {
@@ -1381,7 +1387,7 @@ void test_fldigi(void **state) {
 void test_rigptt(void **state) {
     int rc = call_parse_logcfg("RIGPTT");
     assert_int_equal(rc, PARSE_OK);
-    assert_bool_equal(rigptt, true);
+    assert_int_equal(rigptt, true);
 }
 
 void test_minitest_no_arg(void **state) {

@@ -382,7 +382,7 @@ int fldigi_send_text(const char *line) {
     bool start_tx = false;
     bool switch_to_rx = false;
     char *dst = message;
-    for (char *src = line; *src; ++src) {
+    for (const char *src = line; *src; ++src) {
 	switch (*src) {
 	    case CTRL_R:
 		switch_to_rx = true;

@@ -1,3 +1,4 @@
+#include <hamlib/rig.h>
 #include "test.h"
 
 #include "curses.h"
@@ -112,3 +113,5 @@ void gettxinfo() {
 
 void cqww_simulator(void) {
 }
+int fldigi_get_carrier(void) { return 0; }
+void send_bandswitch(freq_t freq) {};
