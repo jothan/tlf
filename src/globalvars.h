@@ -103,8 +103,6 @@ extern bool lan_active;
 extern int highqsonr;
 
 
-extern RIG *my_rig;
-extern pthread_mutex_t rig_lock;
 extern cqmode_t cqmode;
 extern int trxmode;
 extern int myrig_model;
@@ -145,7 +143,7 @@ extern int cwstart;
 extern bool early_started;
 extern bool stop_tx_only;
 extern int zonedisplay;
-extern int rigptt;
+extern bool rigptt;
 extern int k_ptt;
 extern int k_pin14;
 extern int tune_seconds;

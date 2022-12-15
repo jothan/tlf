@@ -270,22 +270,6 @@ typedef struct {
 
 } contest_config_t;
 
-/**< Bitmask for Hamlib CAT PTT
- * bit 0 set: CAT PTT wanted--RIGPTT in logcfg.dat (set in parse_logcfg)
- * bit 1 set: CAT PTT available--from rig caps (set in sendqrg)
- * bit 2 set: PTT active (set/unset in gettxinfo)
- * bit 3 set: PTT On (set/unset in callinput)
- * bit 4 set: PTT Off (set/unset in callinput)
- */
-enum {
-    CAT_PTT_WANTED      = (1 << 0),
-    CAT_PTT_AVAILABLE   = (1 << 1),
-    CAT_PTT_USE         = CAT_PTT_WANTED | CAT_PTT_AVAILABLE,
-    CAT_PTT_ACTIVE      = (1 << 2),
-    CAT_PTT_ON          = (1 << 3),
-    CAT_PTT_OFF         = (1 << 4),
-};
-
 /* Enums for Xplanet interface */
 enum {
     MARKER_NONE,

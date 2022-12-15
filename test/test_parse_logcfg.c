@@ -179,7 +179,7 @@ int setup_default(void **state) {
     change_rst = false;
     fixedmult = 0.0;
     exclude_multilist_type = EXCLUDE_NONE;
-    rigptt = 0;
+    rigptt = false;
     minitest = 0;
 
     setcontest(QSO_MODE);
@@ -1381,7 +1381,7 @@ void test_fldigi(void **state) {
 void test_rigptt(void **state) {
     int rc = call_parse_logcfg("RIGPTT");
     assert_int_equal(rc, PARSE_OK);
-    assert_int_equal(rigptt, 1);
+    assert_bool_equal(rigptt, true);
 }
 
 void test_minitest_no_arg(void **state) {

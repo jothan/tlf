@@ -1234,7 +1234,7 @@ static config_t logcfg_configs[] = {
     {"LONG_SERIAL",     CFG_INT_CONST(shortqsonr, 0)},
     {"CLUSTER",         CFG_INT_CONST(cluster, CLUSTER)},
     {"SSBMODE",         CFG_INT_CONST(trxmode, SSBMODE)},
-    {"RIGPTT",          CFG_INT_CONST(rigptt, CAT_PTT_WANTED)},
+    {"RIGPTT",          CFG_BOOL(rigptt)},
 
     {"RIGCONF",         CFG_STRING_STATIC(rigconf, 80)},
     {"LOGFILE",         CFG_STRING_STATIC(logfile, 120)},

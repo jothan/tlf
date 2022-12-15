@@ -138,7 +138,7 @@ impl RigConfig {
             rigconf: RigConfig::parse_rigconf()?,
             use_keyer: tlf::cwkeyer == tlf::HAMLIB_KEYER as c_int,
             cw_bandwidth,
-            want_ptt: tlf::rigptt as c_uint & tlf::CAT_PTT_WANTED != 0,
+            want_ptt: tlf::rigptt,
         })
     }
 

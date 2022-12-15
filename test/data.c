@@ -308,7 +308,6 @@ bool bmautograb = false;
 /*-------------------------------------rigctl-------------------------------*/
 #ifdef HAVE_LIBHAMLIB
 int myrig_model = 351;
-RIG *my_rig;			/* handle to rig (instance) */
 freq_t outfreq;			/* output  to rig */
 rmode_t rmode;			/* radio mode of operation */
 pbwidth_t width;
@@ -321,10 +320,7 @@ int ssb_bandwidth = 3000;
 int cw_bandwidth = 0;
 int serial_rate = 2400;
 char *rigportname;
-int rignumber = 0;
-int rig_comm_error = 0;
-int rig_comm_success = 0;
-int rigptt = 0;
+bool rigptt = false;
 
 /*----------------------------the parsed log lines-------------------------*/
 // array of qso's

@@ -193,7 +193,7 @@ char *cabrillo = NULL;		/**< Name of the Cabrillo format definition */
 char synclogfile[120];
 char markerfile[120] = "";
 int xplanet = MARKER_NONE;
-int rigptt = 0;
+bool rigptt = false;
 int tune_seconds;               /* tune up time in seconds for Alt-T */
 
 char message[25][80] = /**< Array of CW messages
@@ -337,9 +337,6 @@ int ssb_bandwidth = 3000;
 int cw_bandwidth = 0;
 int serial_rate = 2400;
 char *rigportname;
-int rignumber = 0;
-int rig_comm_error = 0;
-int rig_comm_success = 0;
 
 /*----------------------------------fldigi---------------------------------*/
 char fldigi_url[50] = "http://localhost:7362/RPC2";
