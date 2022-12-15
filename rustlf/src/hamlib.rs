@@ -6,7 +6,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Mutex,
     },
-    time::{Duration, Instant},
+    time::{Duration, Instant}, borrow::Cow,
 };
 
 use libc::{c_char, c_long};
@@ -590,13 +590,13 @@ fn get_ssb_mode(freq: tlf::freq_t) -> tlf::rmode_t {
     }
 }
 
-fn with_rigerror<F: FnOnce(&str) -> T, T>(error: c_int, f: F) -> T {
+fn with_rigerror<F: FnOnce(Cow<str>) -> T, T>(error: c_int, f: F) -> T {
     // rigerror uses an internal static, non threadsafe, buffer
     static RIGERROR_LOCK: Mutex<()> = Mutex::new(());
 
     let _ugly = RIGERROR_LOCK.lock();
     let msg = unsafe { CStr::from_ptr(tlf::rigerror(error)) }.to_string_lossy();
-    f(msg.as_ref())
+    f(msg)
 }
 
 #[no_mangle]
