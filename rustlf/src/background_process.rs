@@ -99,7 +99,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
          *   fldigi_get_log_call() reads the callsign, if user clicks to a string in Fldigi's RX window
          *   fldigi_get_log_serial_number() reads the exchange
          */
-        if tlf::digikeyer == tlf::FLDIGI as _ && tlf::fldigi_isenabled() && tlf::trx_control {
+        if tlf::digikeyer == tlf::FLDIGI as _ && tlf::fldigi_isenabled() && rig.is_some() {
             if fldigi_rpc_cnt {
                 tlf::fldigi_xmlrpc_get_carrier();
                 tlf::fldigi_get_log_call();

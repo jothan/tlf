@@ -537,7 +537,7 @@ impl RigState {
 
         if self.bandidx != oldbandidx {
             // band change on trx
-            unsafe { handle_trx_bandswitch(rig, self, freq) }.map_err(print_error)?;
+            unsafe { handle_trx_bandswitch(rig, self.mode, freq) }.map_err(print_error)?;
         }
 
         Ok(())
@@ -547,7 +547,7 @@ impl RigState {
 /// Safety: full of global state references here
 unsafe fn handle_trx_bandswitch(
     rig: &mut Rig,
-    state: &mut RigState,
+    rigmode: Option<tlf::rmode_t>,
     freq: tlf::freq_t,
 ) -> Result<(), GenericError> {
     unsafe { tlf::send_bandswitch(freq) };
@@ -558,7 +558,7 @@ unsafe fn handle_trx_bandswitch(
     if tlf::trxmode == tlf::SSBMODE as c_int {
         mode = Some(get_ssb_mode(freq));
     } else if tlf::trxmode == tlf::DIGIMODE as c_int {
-        let rigmode = state.mode.unwrap_or(tlf::RIG_MODE_NONE as tlf::rmode_t);
+        let rigmode = rigmode.unwrap_or(tlf::RIG_MODE_NONE as tlf::rmode_t);
         if rigmode
             & (tlf::RIG_MODE_LSB | tlf::RIG_MODE_USB | tlf::RIG_MODE_RTTY | tlf::RIG_MODE_RTTYR)
             != rigmode
@@ -572,9 +572,6 @@ unsafe fn handle_trx_bandswitch(
 
     if let Some(mode) = mode {
         rig.set_mode(mode, width)?;
-
-        state.mode = Some(mode);
-        state.bandwidth = width.or(state.bandwidth);
     }
 
     Ok(())
