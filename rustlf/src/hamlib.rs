@@ -683,25 +683,11 @@ fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
 
 #[no_mangle]
 pub extern "C" fn hamlib_keyer_set_speed(cwspeed: c_int) -> c_int {
-    with_background(|bg| {
-        bg.schedule_wait(move |rig| {
-            match rig.as_mut().unwrap().set_keyer_speed(cwspeed as c_uint) {
-                Ok(_) => tlf::RIG_OK,
-                Err(e) => e.0,
-            }
-        })
-        .expect("background send error")
-    })
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn hamlib_keyer_get_speed(speed: *mut c_int) -> c_int {
-    let speed_result = with_background(|bg| {
-        bg.schedule_wait(|rig| rig.as_mut().unwrap().get_keyer_speed())
+    let set_result = with_background(|bg| {
+        bg.schedule_wait(move |rig| rig.as_mut().unwrap().set_keyer_speed(cwspeed as c_uint))
             .expect("background send error")
-    })
-    .map(|s| unsafe { *speed = s as c_int });
-    result_to_retval(speed_result)
+    });
+    result_to_retval(set_result)
 }
 
 #[no_mangle]
