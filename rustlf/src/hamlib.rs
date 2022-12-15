@@ -279,7 +279,7 @@ impl RigConfig {
 }
 
 impl Rig {
-    pub(crate) fn get_keyer_speed(&mut self) -> Result<c_uint, GenericError> {
+    fn get_keyer_speed(&mut self) -> Result<c_uint, GenericError> {
         let mut value = MaybeUninit::uninit();
 
         let retval = unsafe {
@@ -301,7 +301,7 @@ impl Rig {
             })
     }
 
-    pub(crate) fn set_keyer_speed(&mut self, speed: c_uint) -> Result<(), GenericError> {
+    fn set_keyer_speed(&mut self, speed: c_uint) -> Result<(), GenericError> {
         let value = tlf::value_t { i: speed as c_int };
 
         let retval = unsafe {
@@ -326,7 +326,7 @@ impl Rig {
         retval_to_result(retval)
     }
 
-    pub(crate) fn stop_keyer(&mut self) -> Result<(), GenericError> {
+    fn stop_keyer(&mut self) -> Result<(), GenericError> {
         if !self.can_stop_morse {
             return Ok(());
         }
@@ -335,7 +335,22 @@ impl Rig {
         retval_to_result(retval)
     }
 
-    pub(crate) fn set_mode(
+    fn get_mode(&mut self) -> Result<(tlf::rmode_t, tlf::pbwidth_t), GenericError> {
+        let mut mode: tlf::rmode_t = tlf::RIG_MODE_NONE.into();
+        let mut bandwidth = 0;
+
+        let retval = unsafe {
+            tlf::rig_get_mode(
+                self.handle.as_mut(),
+                tlf::RIG_VFO_CURR,
+                &mut mode,
+                &mut bandwidth,
+            )
+        };
+        retval_to_result(retval).map(|_| (mode, bandwidth))
+    }
+
+    fn set_mode(
         &mut self,
         mode: tlf::rmode_t,
         bandwidth: Option<tlf::pbwidth_t>,
@@ -351,20 +366,20 @@ impl Rig {
         retval_to_result(retval)
     }
 
-    pub(crate) fn set_cw_mode(&mut self) -> Result<(), GenericError> {
+    fn set_cw_mode(&mut self) -> Result<(), GenericError> {
         self.set_mode(tlf::RIG_MODE_CW, self.cw_bandwidth)
     }
 
-    pub(crate) fn set_ssb_mode(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
+    fn set_ssb_mode(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
         self.set_mode(get_ssb_mode(freq), None)
     }
 
-    pub(crate) fn reset_rit(&mut self) -> Result<(), GenericError> {
+    fn reset_rit(&mut self) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_rit(self.handle.as_mut(), tlf::RIG_VFO_CURR, 0) };
         retval_to_result(retval)
     }
 
-    pub(crate) fn set_ptt(&mut self, ptt: bool) -> Result<(), GenericError> {
+    fn set_ptt(&mut self, ptt: bool) -> Result<(), GenericError> {
         if !self.use_ptt || self.ptt_state == ptt {
             return Ok(());
         }
@@ -382,20 +397,20 @@ impl Rig {
         Ok(())
     }
 
-    pub(crate) fn get_vfo(&mut self) -> Result<tlf::vfo_t, GenericError> {
+    fn get_vfo(&mut self) -> Result<tlf::vfo_t, GenericError> {
         let mut vfo = 0;
         let retval = unsafe { tlf::rig_get_vfo(self.handle.as_mut(), &mut vfo) };
         retval_to_result(retval).map(|_| vfo)
     }
 
-    pub(crate) fn get_freq(&mut self) -> Result<tlf::freq_t, GenericError> {
+    fn get_freq(&mut self) -> Result<tlf::freq_t, GenericError> {
         let mut freq = 0.;
         let retval =
             unsafe { tlf::rig_get_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, &mut freq) };
         retval_to_result(retval).map(|_| freq)
     }
 
-    pub(crate) fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
+    fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, freq) };
         retval_to_result(retval)
     }
@@ -448,17 +463,7 @@ impl RigState {
         };
 
         if out.freq.is_some() {
-            let mut mode = 0;
-            let mut bandwidth = 0;
-            let retval = unsafe {
-                tlf::rig_get_mode(
-                    rig.handle.as_mut(),
-                    tlf::RIG_VFO_CURR,
-                    &mut mode,
-                    &mut bandwidth,
-                )
-            };
-            if retval == tlf::RIG_OK {
+            if let Ok((mode, bandwidth)) = rig.get_mode() {
                 out.mode = Some(mode);
                 out.bandwidth = Some(bandwidth);
             }
@@ -582,7 +587,7 @@ fn get_ssb_mode(freq: tlf::freq_t) -> tlf::rmode_t {
     }
 }
 
-pub(crate) fn with_rigerror<F: FnOnce(&str) -> T, T>(error: c_int, f: F) -> T {
+fn with_rigerror<F: FnOnce(&str) -> T, T>(error: c_int, f: F) -> T {
     // rigerror uses an internal static, non threadsafe, buffer
     static RIGERROR_LOCK: Mutex<()> = Mutex::new(());
 
