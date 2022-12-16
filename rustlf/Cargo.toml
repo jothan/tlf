@@ -22,6 +22,7 @@ crossbeam = "0.8"
 oneshot = "0.1"
 ptr = "0.2"
 libc = "0.2"
+cstr = "0.2"
 
 [build-dependencies]
 cbindgen = "0.24.3"

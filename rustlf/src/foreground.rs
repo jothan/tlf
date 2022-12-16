@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::ffi::{c_char, c_int, c_uint, c_void};
+use std::ffi::{c_int, c_uint, c_void};
 use std::sync::Arc;
 use std::time::Duration;
 

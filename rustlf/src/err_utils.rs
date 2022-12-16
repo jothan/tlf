@@ -36,10 +36,7 @@ pub fn log_message(level: LogLevel, message: impl Into<String>) {
 
 macro_rules! log_message_static {
     ($level:expr,$msg:literal) => {
-        $crate::err_utils::log_message_raw(
-            $level,
-            CStr::from_bytes_with_nul(concat!($msg, "\x00").as_bytes()).expect("invalid message"),
-        );
+        $crate::err_utils::log_message_raw($level, cstr::cstr!($msg));
     };
 }
 
@@ -47,7 +44,7 @@ pub(crate) use log_message_static;
 
 macro_rules! showmsg {
     ($msg:literal) => {
-        unsafe { tlf::showmsg(concat!($msg, "\0").as_ptr() as *const c_char) }
+        unsafe { tlf::showmsg(cstr::cstr!($msg).as_ptr()) }
     };
 }
 
@@ -55,7 +52,7 @@ pub(crate) use showmsg;
 
 macro_rules! shownr {
     ($msg:literal, $nr:expr) => {
-        unsafe { tlf::shownr(concat!($msg, "\0").as_ptr() as *const c_char, $nr) }
+        unsafe { tlf::shownr(cstr::cstr!($msg).as_ptr(), $nr) }
     };
 }
 
