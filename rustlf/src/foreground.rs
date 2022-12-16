@@ -52,16 +52,20 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
 
     let rig_result = RigConfig::from_globals().and_then(|config| config.open_rig());
 
-    let Ok(rig) = rig_result else {
-        showmsg!("Continue without rig control Y/(N)?");
-        if (tlf::key_get() as u8).to_ascii_uppercase() != b'Y' {
-            tlf::endwin();
-            std::process::exit(1);
+    let rig = match rig_result {
+        Ok(rig) => rig,
+        Err(e) => {
+            showmsg!(format!("Could not open rig: {e}"));
+            showmsg!("Continue without rig control Y/(N)?");
+            if (tlf::key_get() as u8).to_ascii_uppercase() != b'Y' {
+                tlf::endwin();
+                std::process::exit(1);
+            }
+            tlf::trx_control = false;
+            showmsg!("Disabling rig control!");
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            return Err(e);
         }
-        tlf::trx_control = false;
-        showmsg!("Disabling rig control!");
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        return rig_result;
     };
 
     match tlf::trxmode as c_uint {

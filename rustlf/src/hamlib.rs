@@ -594,7 +594,7 @@ fn with_rigerror<F: FnOnce(Cow<str>) -> T, T>(error: c_int, f: F) -> T {
     static RIGERROR_LOCK: Mutex<()> = Mutex::new(());
 
     let _ugly = RIGERROR_LOCK.lock();
-    let msg = unsafe { CStr::from_ptr(tlf::rigerror(error)) }.to_string_lossy();
+    let msg = unsafe { CStr::from_ptr(tlf::rigerror2(error)) }.to_string_lossy();
     f(msg)
 }
 

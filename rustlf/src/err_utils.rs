@@ -46,6 +46,10 @@ macro_rules! showmsg {
     ($msg:literal) => {
         unsafe { tlf::showmsg(cstr::cstr!($msg).as_ptr()) }
     };
+    ($msg:expr) => {
+        let s = std::ffi::CString::new($msg).expect("invalid message");
+        unsafe { tlf::showmsg(s.as_ptr()) }
+    };
 }
 
 pub(crate) use showmsg;
