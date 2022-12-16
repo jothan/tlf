@@ -117,7 +117,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
         // get freq info from TRX
         if let Some(rig) = rig.as_mut() {
-            rig.poll();
+            let _ = rig.poll().map_err(crate::hamlib::print_error);
         }
     }
 }

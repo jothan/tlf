@@ -284,6 +284,8 @@ impl RigConfig {
 }
 
 impl Rig {
+    const POLL_PERIOD: Duration = Duration::from_millis(200);
+
     fn get_keyer_speed(&mut self) -> Result<c_uint, GenericError> {
         let mut value = MaybeUninit::uninit();
 
@@ -420,9 +422,83 @@ impl Rig {
         retval_to_result(retval)
     }
 
-    pub(crate) fn poll(&mut self) {
+    pub(crate) fn poll(&mut self) -> Result<(), GenericError> {
+        let now = Instant::now();
+        if let Some(ref previous) = self.state {
+            if now.duration_since(previous.time) < Self::POLL_PERIOD {
+                return Ok(());
+            }
+        }
+
+        let trxmode = unsafe { tlf::trxmode };
+        let digikeyer = unsafe { tlf::digikeyer };
+
         let previous = self.state.take();
-        self.state = Some(RigState::poll(self, previous));
+        let state = RigState::poll(self, now, trxmode, digikeyer);
+        let freq = self.change_freq(&state)?;
+        if state.bandidx != previous.and_then(|s| s.bandidx) {
+            // band change on trx
+            unsafe { tlf::send_bandswitch(freq) };
+
+            self.set_band_mode(trxmode, state.mode, freq)?;
+        }
+        self.state = Some(state);
+        self.poll_keyer()?;
+
+        Ok(())
+    }
+
+    fn change_freq(&mut self, state: &RigState) -> Result<tlf::freq_t, GenericError> {
+        // TODO: broadcast frequency properly from here
+        let Some(freq) = state.freq else {
+            unsafe { tlf::freq = 0. };
+            return Err(GenericError(-1).into());
+        };
+        let freq = radio_to_display_frequency(freq, Some(state));
+        if state.fldigi_carrier.is_some() {
+            if let Some(shift) = crate::fldigi::get_shifted_freq(state.mode) {
+                self.set_freq(freq + shift).map_err(print_error)?;
+            }
+        }
+
+        if freq > 0. {
+            unsafe { tlf::freq = freq };
+            // Handle this by subscribing to the above state update
+            unsafe { tlf::bandfrequency[state.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq };
+        }
+
+        Ok(freq)
+    }
+
+    fn set_band_mode(
+        &mut self,
+        trxmode: c_int,
+        rigmode: Option<tlf::rmode_t>,
+        freq: tlf::freq_t,
+    ) -> Result<(), GenericError> {
+        let mut mode: Option<tlf::rmode_t> = None; // default: no change
+        let mut width = None; // passband width, in Hz
+
+        if trxmode == tlf::SSBMODE as c_int {
+            mode = Some(get_ssb_mode(freq));
+        } else if trxmode == tlf::DIGIMODE as c_int {
+            let rigmode = rigmode.unwrap_or(tlf::RIG_MODE_NONE as tlf::rmode_t);
+            if rigmode
+                & (tlf::RIG_MODE_LSB | tlf::RIG_MODE_USB | tlf::RIG_MODE_RTTY | tlf::RIG_MODE_RTTYR)
+                != rigmode
+            {
+                mode = Some(tlf::RIG_MODE_LSB);
+            }
+        } else {
+            mode = Some(tlf::RIG_MODE_CW);
+            width = self.cw_bandwidth;
+        }
+
+        if let Some(mode) = mode {
+            self.set_mode(mode, width)?;
+        }
+
+        Ok(())
     }
 
     fn poll_keyer(&mut self) -> Result<(), GenericError> {
@@ -457,11 +533,9 @@ impl Rig {
 }
 
 impl RigState {
-    const POLL_PERIOD: Duration = Duration::from_millis(200);
-
-    fn poll(rig: &mut Rig, previous: Option<RigState>) -> RigState {
+    fn poll(rig: &mut Rig, time: Instant, trxmode: c_int, digikeyer: c_int) -> RigState {
         let mut out = RigState {
-            time: Instant::now(),
+            time,
             vfo: None,
             freq: None,
             mode: None,
@@ -469,12 +543,6 @@ impl RigState {
             fldigi_carrier: None,
             bandidx: None,
         };
-
-        if let Some(p) = previous.as_ref() {
-            if out.time.duration_since(p.time) < Self::POLL_PERIOD {
-                return previous.unwrap();
-            }
-        }
 
         // Initialize RIG_VFO_CURR
         let vfo_result = rig.get_vfo().map(|vfo| {
@@ -496,86 +564,16 @@ impl RigState {
                 out.bandwidth = Some(bandwidth);
             }
 
-            if unsafe {
-                tlf::trxmode == tlf::DIGIMODE as c_int
-                    && (tlf::digikeyer == tlf::GMFSK as c_int
-                        || tlf::digikeyer == tlf::FLDIGI as c_int)
-            } {
-                let fldigi_carrier = tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() });
-                out.fldigi_carrier = Some(fldigi_carrier);
+            if trxmode == tlf::DIGIMODE as c_int
+                && (digikeyer == tlf::GMFSK as c_int || digikeyer == tlf::FLDIGI as c_int)
+            {
+                out.fldigi_carrier = Some(tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() }));
             }
             out.bandidx = freq2band(radio_to_display_frequency(freq, Some(&out)) as c_uint);
         }
 
-        if out.change_freq(rig, previous.as_ref()).is_err() {
-            return out;
-        }
-
-        let _ = rig.poll_keyer().map_err(print_error);
-
         out
     }
-
-    fn change_freq(&self, rig: &mut Rig, previous: Option<&RigState>) -> Result<(), Error> {
-        // TODO: broadcast frequency properly from here
-        let Some(freq) = self.freq else {
-            unsafe { tlf::freq = 0. };
-            return Err(GenericError(-1).into());
-        };
-        let freq = radio_to_display_frequency(freq, Some(self));
-        if self.fldigi_carrier.is_some() {
-            if let Some(shift) = crate::fldigi::get_shifted_freq(self.mode) {
-                rig.set_freq(freq + shift).map_err(print_error)?;
-            }
-        }
-
-        if freq >= unsafe { tlf::bandcorner[0][0] } as tlf::freq_t {
-            unsafe { tlf::freq = freq };
-        }
-
-        // Handle this by subscribing to the above state update
-        unsafe { tlf::bandfrequency[self.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq };
-
-        if self.bandidx != previous.and_then(|s| s.bandidx) {
-            // band change on trx
-            unsafe { handle_trx_bandswitch(rig, self.mode, freq) }.map_err(print_error)?;
-        }
-
-        Ok(())
-    }
-}
-
-/// Safety: full of global state references here
-unsafe fn handle_trx_bandswitch(
-    rig: &mut Rig,
-    rigmode: Option<tlf::rmode_t>,
-    freq: tlf::freq_t,
-) -> Result<(), GenericError> {
-    unsafe { tlf::send_bandswitch(freq) };
-
-    let mut mode: Option<tlf::rmode_t> = None; // default: no change
-    let mut width = None; // passband width, in Hz
-
-    if tlf::trxmode == tlf::SSBMODE as c_int {
-        mode = Some(get_ssb_mode(freq));
-    } else if tlf::trxmode == tlf::DIGIMODE as c_int {
-        let rigmode = rigmode.unwrap_or(tlf::RIG_MODE_NONE as tlf::rmode_t);
-        if rigmode
-            & (tlf::RIG_MODE_LSB | tlf::RIG_MODE_USB | tlf::RIG_MODE_RTTY | tlf::RIG_MODE_RTTYR)
-            != rigmode
-        {
-            mode = Some(tlf::RIG_MODE_LSB);
-        }
-    } else {
-        mode = Some(tlf::RIG_MODE_CW);
-        width = rig.cw_bandwidth;
-    }
-
-    if let Some(mode) = mode {
-        rig.set_mode(mode, width)?;
-    }
-
-    Ok(())
 }
 
 fn get_ssb_mode(freq: tlf::freq_t) -> tlf::rmode_t {
@@ -717,7 +715,7 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
     result_to_retval(ptt_result)
 }
 
-fn print_error(e: GenericError) -> GenericError {
+pub(crate) fn print_error(e: GenericError) -> GenericError {
     log_message(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
 }
