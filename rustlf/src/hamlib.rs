@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     ffi::{c_int, c_uint, c_ulong, CStr, CString},
     fmt::Display,
     mem::MaybeUninit,
@@ -6,7 +7,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Mutex,
     },
-    time::{Duration, Instant}, borrow::Cow,
+    time::{Duration, Instant},
 };
 
 use libc::{c_char, c_long};
@@ -42,6 +43,7 @@ struct RigState {
     bandwidth: Option<tlf::pbwidth_t>,
     mode: Option<tlf::rmode_t>,
     bandidx: Option<usize>,
+    fldigi_carrier: Option<tlf::freq_t>,
     time: Instant,
 }
 
@@ -413,7 +415,7 @@ impl Rig {
         retval_to_result(retval).map(|_| freq)
     }
 
-    fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
+    pub(crate) fn set_freq(&mut self, freq: tlf::freq_t) -> Result<(), GenericError> {
         let retval = unsafe { tlf::rig_set_freq(self.handle.as_mut(), tlf::RIG_VFO_CURR, freq) };
         retval_to_result(retval)
     }
@@ -442,6 +444,7 @@ impl RigState {
             freq: None,
             mode: None,
             bandwidth: None,
+            fldigi_carrier: None,
             bandidx: None,
         };
 
@@ -465,26 +468,27 @@ impl RigState {
             _ => (),
         };
 
-        if out.freq.is_some() {
+        if let Some(freq) = out.freq {
             if let Ok((mode, bandwidth)) = rig.get_mode() {
                 out.mode = Some(mode);
                 out.bandwidth = Some(bandwidth);
             }
-        }
 
-        /* TODO: fldigi handling
-            if (trxmode == DIGIMODE && (digikeyer == GMFSK || digikeyer == FLDIGI)) {
-            rigfreq += (freq_t)fldigi_get_carrier();
-            if (rigmode == RIG_MODE_RTTY || rigmode == RIG_MODE_RTTYR) {
-            fldigi_shift_freq = fldigi_get_shift_freq();
-            if (fldigi_shift_freq != 0) {
-                pthread_mutex_lock(&rig_lock);
-                retval = rig_set_freq(my_rig, RIG_VFO_CURR,
-                          ((freq_t)rigfreq + (freq_t)fldigi_shift_freq));
-                pthread_mutex_unlock(&rig_lock);
+            if unsafe {
+                tlf::trxmode == tlf::DIGIMODE as c_int
+                    && (tlf::digikeyer == tlf::GMFSK as c_int
+                        || tlf::digikeyer == tlf::FLDIGI as c_int)
+            } {
+                let fldigi_carrier = tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() });
+                out.fldigi_carrier = Some(fldigi_carrier);
+                let _ = crate::fldigi::apply_shift_freq(
+                    rig,
+                    out.mode,
+                    radio_to_display_frequency(freq, Some(&out)),
+                )
+                .map_err(print_error);
             }
-            }
-        } */
+        }
 
         if out.change_freq(rig, previous.as_ref()).is_err() {
             return out;
@@ -517,12 +521,12 @@ impl RigState {
 
     fn change_freq(&mut self, rig: &mut Rig, previous: Option<&RigState>) -> Result<(), Error> {
         // TODO: broadcast frequency properly from here
-        if self.freq.is_none() {
+        let Some(freq) = self.freq else {
             unsafe { tlf::freq = 0. };
             return Err(GenericError(-1).into());
-        }
+        };
 
-        let freq = self.freq.unwrap();
+        let freq = radio_to_display_frequency(freq, Some(self));
 
         if freq >= unsafe { tlf::bandcorner[0][0] } as tlf::freq_t {
             unsafe { tlf::freq = freq };
@@ -603,14 +607,12 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
     }
 
     if hertz > 0. {
-        let mut hertz = hertz - unsafe { tlf::fldigi_get_carrier() as tlf::freq_t };
-        if hertz < 0. {
-            hertz = 0.;
-        }
-
         with_background(|bg| {
             bg.schedule_nowait(move |rig| {
-                let _ = rig.as_mut().unwrap().set_freq(hertz).map_err(print_error);
+                let rig = rig.as_mut().unwrap();
+                let _ = rig
+                    .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
+                    .map_err(print_error);
             })
             .expect("background send error")
         });
@@ -621,15 +623,23 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
 
 #[no_mangle]
 pub extern "C" fn set_outfreq_wait(hertz: tlf::freq_t) {
-    let hertz = hertz - unsafe { tlf::fldigi_get_carrier() as tlf::freq_t };
-    assert!(hertz >= 0.);
-
     with_background(|bg| {
         bg.schedule_wait(move |rig| {
-            let _ = rig.as_mut().unwrap().set_freq(hertz).map_err(print_error);
+            let rig = rig.as_mut().unwrap();
+            let _ = rig
+                .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
+                .map_err(print_error);
         })
         .expect("background send error")
     });
+}
+
+fn display_to_radio_frequency(freq: tlf::freq_t, state: Option<&RigState>) -> tlf::freq_t {
+    freq - state.as_ref().and_then(|s| s.fldigi_carrier).unwrap_or(0.)
+}
+
+fn radio_to_display_frequency(freq: tlf::freq_t, state: Option<&RigState>) -> tlf::freq_t {
+    freq + state.as_ref().and_then(|s| s.fldigi_carrier).unwrap_or(0.)
 }
 
 fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {

@@ -48,6 +48,7 @@
 #include "startmsg.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #define XMLRPCVERSION "1.0"
 
@@ -510,14 +511,14 @@ int fldigi_xmlrpc_get_carrier() {
     if (rigmode == RIG_MODE_RTTY || rigmode == RIG_MODE_RTTYR) {
 	if (fldigi_var_carrier != CENTER_FREQ &&
 		abs(CENTER_FREQ - fldigi_var_carrier) > MAXSHIFT) {
-	    if (fldigi_var_shift_freq == 0) {
+	    if (fldigi_var_shift_freq_get() == 0) {
 		rc = fldigi_xmlrpc_query(&result, &env,
 					 "modem.set_carrier", "d",
 					 (xmlrpc_int32) CENTER_FREQ);
 		if (rc != 0) {
 		    return -1;
 		}
-		fldigi_var_shift_freq = CENTER_FREQ - fldigi_var_carrier;
+		fldigi_var_shift_freq_set(CENTER_FREQ - fldigi_var_carrier);
 	    }
 	}
     }
@@ -710,20 +711,6 @@ int fldigi_get_log_serial_number() {
     }
 #endif
     return 0;
-}
-
-int fldigi_get_shift_freq() {
-#ifdef HAVE_LIBXMLRPC
-    int t;				/* temp var to store real variable
-					   before cleaning it up */
-    t = fldigi_var_shift_freq;	/* clean is necessary to check that
-					   it readed by called this function */
-    fldigi_var_shift_freq = 0;	/* needs to keep in sync with the
-					   rig VFO */
-    return t;
-#else
-    return 0;
-#endif
 }
 
 void xmlrpc_showinfo() {

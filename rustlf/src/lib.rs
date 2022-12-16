@@ -5,6 +5,7 @@ pub mod background_process;
 pub mod bands;
 mod cw_utils;
 pub mod err_utils;
+pub mod fldigi;
 mod foreground;
 mod hamlib;
 mod netkeyer;
