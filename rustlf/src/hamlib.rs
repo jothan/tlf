@@ -452,7 +452,7 @@ impl Rig {
         // TODO: broadcast frequency properly from here
         let Some(freq) = state.freq else {
             unsafe { tlf::freq = 0. };
-            return Err(GenericError(-1).into());
+            return Err(GenericError(-1));
         };
         let freq = radio_to_display_frequency(freq, Some(state));
         if state.fldigi_carrier.is_some() {
@@ -464,7 +464,9 @@ impl Rig {
         if freq > 0. {
             unsafe { tlf::freq = freq };
             // Handle this by subscribing to the above state update
-            unsafe { tlf::bandfrequency[state.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq };
+            unsafe {
+                tlf::bandfrequency[state.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq
+            };
         }
 
         Ok(freq)
@@ -545,32 +547,28 @@ impl RigState {
         };
 
         // Initialize RIG_VFO_CURR
-        let vfo_result = rig.get_vfo().map(|vfo| {
-            out.vfo = Some(vfo);
-            vfo
-        });
-        match vfo_result {
-            Ok(_) | Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => {
-                if let Ok(freq) = rig.get_freq() {
-                    out.freq = Some(freq);
-                }
-            }
-            _ => (),
+        match rig.get_vfo() {
+            Ok(vfo) => out.vfo = Some(vfo),
+            Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => (),
+            _ => return out,
         };
 
-        if let Some(freq) = out.freq {
-            if let Ok((mode, bandwidth)) = rig.get_mode() {
-                out.mode = Some(mode);
-                out.bandwidth = Some(bandwidth);
-            }
+        let Ok(freq) = rig.get_freq() else {
+            return out;
+        };
+        out.freq = Some(freq);
 
-            if trxmode == tlf::DIGIMODE as c_int
-                && (digikeyer == tlf::GMFSK as c_int || digikeyer == tlf::FLDIGI as c_int)
-            {
-                out.fldigi_carrier = Some(tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() }));
-            }
-            out.bandidx = freq2band(radio_to_display_frequency(freq, Some(&out)) as c_uint);
+        if let Ok((mode, bandwidth)) = rig.get_mode() {
+            out.mode = Some(mode);
+            out.bandwidth = Some(bandwidth);
         }
+
+        if trxmode == tlf::DIGIMODE as c_int
+            && (digikeyer == tlf::GMFSK as c_int || digikeyer == tlf::FLDIGI as c_int)
+        {
+            out.fldigi_carrier = Some(tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() }));
+        }
+        out.bandidx = freq2band(radio_to_display_frequency(freq, Some(&out)) as c_uint);
 
         out
     }

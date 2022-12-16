@@ -68,7 +68,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
         mut rig,
     } = *Box::from_raw(config as *mut BackgroundConfig);
 
-    let netkeyer = Option::as_ref(&*netkeyer);
+    let netkeyer = (*netkeyer).as_ref();
 
     let mut lantimesync: c_int = 0;
     let mut fldigi_rpc_cnt: bool = false;
