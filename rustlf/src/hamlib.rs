@@ -47,12 +47,20 @@ struct RigState {
     time: Instant,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
+    #[error("hamlib return code: {0}")]
     Generic(GenericError),
+    #[error("invalid configuration parameters")]
     InvalidRigconf,
+    #[error("invalid model number")]
     InvalidModel,
-    Open(c_int),
+    #[error("could not read frequency information")]
+    Poll,
+    #[error("rig open error: {0}")]
+    Open(GenericError),
+    #[error("rig control disabled")]
+    ControlDisabled,
 }
 
 #[derive(Debug)]
@@ -250,7 +258,7 @@ impl RigConfig {
 
         let retval = unsafe { tlf::rig_open(rig.handle.as_mut()) };
         if retval != tlf::rig_errcode_e_RIG_OK as c_int {
-            return Err(Error::Open(retval));
+            return Err(Error::Open(retval.into()));
         }
         rig.opened = true;
 
@@ -422,7 +430,7 @@ impl Rig {
         retval_to_result(retval)
     }
 
-    pub(crate) fn poll(&mut self) -> Result<(), GenericError> {
+    pub(crate) fn poll(&mut self) -> Result<(), Error> {
         let now = Instant::now();
         if let Some(ref previous) = self.state {
             if now.duration_since(previous.time) < Self::POLL_PERIOD {
@@ -448,11 +456,11 @@ impl Rig {
         Ok(())
     }
 
-    fn change_freq(&mut self, state: &RigState) -> Result<tlf::freq_t, GenericError> {
+    fn change_freq(&mut self, state: &RigState) -> Result<tlf::freq_t, Error> {
         // TODO: broadcast frequency properly from here
         let Some(freq) = state.freq else {
             unsafe { tlf::freq = 0. };
-            return Err(GenericError(-1));
+            return Err(Error::Poll);
         };
         let freq = radio_to_display_frequency(freq, Some(state));
         if state.fldigi_carrier.is_some() {
@@ -713,7 +721,7 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
     result_to_retval(ptt_result)
 }
 
-pub(crate) fn print_error(e: GenericError) -> GenericError {
+fn print_error(e: GenericError) -> GenericError {
     log_message(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
 }

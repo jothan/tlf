@@ -42,7 +42,7 @@ unsafe fn hamlib_init() -> Result<Rig, Error> {
     tlf::rig_set_debug(tlf::rig_debug_level_e_RIG_DEBUG_NONE);
 
     if !tlf::trx_control {
-        return Err(Error::InvalidRigconf);
+        return Err(Error::ControlDisabled);
     }
 
     shownr!("Rig model number is", tlf::myrig_model);

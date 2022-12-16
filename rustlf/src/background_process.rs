@@ -3,6 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use std::time::Duration;
 
+use crate::err_utils::{log_message, LogLevel};
 use crate::foreground::BACKGROUND_HANDLE;
 use crate::hamlib::Rig;
 use crate::netkeyer::{Netkeyer, NETKEYER};
@@ -117,7 +118,9 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
         // get freq info from TRX
         if let Some(rig) = rig.as_mut() {
-            let _ = rig.poll().map_err(crate::hamlib::print_error);
+            let _ = rig.poll().map_err(|e| {
+                log_message(LogLevel::WARN, format!("Problem reading radio status: {e}"));
+            });
         }
     }
 }
