@@ -261,7 +261,7 @@ impl RigConfig {
 
         // Initialize RIG_VFO_CURR
         let rigfreq = match rig.get_vfo() {
-            Ok(_) | Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => rig.get_freq(),
+            Ok(_) | Err(GenericError(ENIMPL | ENAVAIL)) => rig.get_freq(),
             Err(e) => Err(e),
         }
         .map_err(print_error)?;
@@ -554,7 +554,7 @@ impl RigState {
         // Initialize RIG_VFO_CURR
         match rig.get_vfo() {
             Ok(vfo) => out.vfo = Some(vfo),
-            Err(GenericError(ENIMPL)) | Err(GenericError(ENAVAIL)) => (),
+            Err(GenericError(ENIMPL | ENAVAIL)) => (),
             _ => return out,
         };
 
