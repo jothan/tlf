@@ -425,6 +425,28 @@ impl Rig {
         self.state = Some(RigState::poll(self, previous));
     }
 
+    fn poll_keyer(&mut self) -> Result<(), GenericError> {
+        if !self.use_keyer {
+            return Ok(());
+        }
+        let rig_speed = self.get_keyer_speed()?;
+
+        if GetCWSpeed() != rig_speed {
+            // Should the rounded wpm value be written back to the radio if different ?
+            SetCWSpeed(rig_speed);
+            let new_speed = GetCWSpeed();
+
+            if new_speed != rig_speed {
+                // TODO: send this to main thread
+                unsafe {
+                    tlf::display_cw_speed(new_speed);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn can_send_morse(&self) -> bool {
         self.can_send_morse
     }
@@ -481,65 +503,40 @@ impl RigState {
             } {
                 let fldigi_carrier = tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() });
                 out.fldigi_carrier = Some(fldigi_carrier);
-                let _ = crate::fldigi::apply_shift_freq(
-                    rig,
-                    out.mode,
-                    radio_to_display_frequency(freq, Some(&out)),
-                )
-                .map_err(print_error);
             }
+            out.bandidx = freq2band(radio_to_display_frequency(freq, Some(&out)) as c_uint);
         }
 
         if out.change_freq(rig, previous.as_ref()).is_err() {
             return out;
         }
 
-        if rig.use_keyer {
-            match rig.get_keyer_speed() {
-                Ok(rig_speed) => {
-                    if GetCWSpeed() != rig_speed {
-                        // Should the rounded wpm value be written back to the radio if different ?
-                        SetCWSpeed(rig_speed);
-                        let new_speed = GetCWSpeed();
-
-                        if new_speed != rig_speed {
-                            // TODO: send this to main thread
-                            unsafe {
-                                tlf::display_cw_speed(GetCWSpeed());
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    print_error(e);
-                }
-            }
-        }
+        let _ = rig.poll_keyer().map_err(print_error);
 
         out
     }
 
-    fn change_freq(&mut self, rig: &mut Rig, previous: Option<&RigState>) -> Result<(), Error> {
+    fn change_freq(&self, rig: &mut Rig, previous: Option<&RigState>) -> Result<(), Error> {
         // TODO: broadcast frequency properly from here
         let Some(freq) = self.freq else {
             unsafe { tlf::freq = 0. };
             return Err(GenericError(-1).into());
         };
-
         let freq = radio_to_display_frequency(freq, Some(self));
+        if self.fldigi_carrier.is_some() {
+            if let Some(shift) = crate::fldigi::get_shifted_freq(self.mode) {
+                rig.set_freq(freq + shift).map_err(print_error)?;
+            }
+        }
 
         if freq >= unsafe { tlf::bandcorner[0][0] } as tlf::freq_t {
             unsafe { tlf::freq = freq };
         }
 
-        self.bandidx = freq2band(freq as c_uint);
-
         // Handle this by subscribing to the above state update
         unsafe { tlf::bandfrequency[self.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq };
 
-        let oldbandidx = previous.and_then(|s| s.bandidx);
-
-        if self.bandidx != oldbandidx {
+        if self.bandidx != previous.and_then(|s| s.bandidx) {
             // band change on trx
             unsafe { handle_trx_bandswitch(rig, self.mode, freq) }.map_err(print_error)?;
         }
