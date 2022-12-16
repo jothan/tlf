@@ -3,6 +3,7 @@ use std::{
     ffi::{c_int, c_uint, c_ulong, CStr, CString},
     fmt::Display,
     mem::MaybeUninit,
+    ptr::NonNull,
     sync::{
         atomic::{AtomicBool, Ordering},
         Mutex,
@@ -11,7 +12,6 @@ use std::{
 };
 
 use libc::{c_char, c_long};
-use ptr::Unique;
 
 use crate::{
     background_process::{with_background, BackgroundContext},
@@ -108,7 +108,7 @@ fn result_to_retval(result: Result<(), GenericError>) -> c_int {
 }
 
 pub(crate) struct Rig {
-    handle: Unique<tlf::RIG>,
+    handle: NonNull<tlf::RIG>,
     opened: bool,
     can_send_morse: bool,
     can_stop_morse: bool,
@@ -130,7 +130,7 @@ impl Drop for Rig {
                 self.opened = false;
             }
             tlf::rig_cleanup(self.handle.as_mut());
-            self.handle = Unique::empty();
+            self.handle = NonNull::dangling();
         }
     }
 }
@@ -195,10 +195,9 @@ impl RigConfig {
     }
 
     pub(crate) fn open_rig(&self) -> Result<Rig, Error> {
-        let rig: *mut tlf::RIG = unsafe { tlf::rig_init(self.model) };
-        let mut rig = match Unique::new(rig) {
-            Some(rig) => rig,
-            None => return Err(Error::InvalidModel),
+        let rig = unsafe { tlf::rig_init(self.model) };
+        let Some(mut rig) = NonNull::new(rig) else {
+            return Err(Error::InvalidModel);
         };
 
         if let Some(ref portname) = self.portname {
