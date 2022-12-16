@@ -1,6 +1,6 @@
 use std::{
     borrow::Cow,
-    ffi::{c_int, c_uint, c_ulong, CStr, CString},
+    ffi::{c_char, c_int, c_long, c_uint, c_ulong, CStr, CString},
     fmt::Display,
     mem::MaybeUninit,
     ptr::NonNull,
@@ -10,8 +10,6 @@ use std::{
     },
     time::{Duration, Instant},
 };
-
-use libc::{c_char, c_long};
 
 use crate::{
     background_process::{with_background, BackgroundContext},
