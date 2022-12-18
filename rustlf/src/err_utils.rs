@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, CStr, CString};
+use std::ffi::{c_int, CStr, CString};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -12,17 +12,17 @@ pub enum LogLevel {
 pub fn log_message_raw(level: LogLevel, message: impl AsRef<CStr>) {
     let message = message.as_ref();
     if in_foreground() {
-        unsafe { log_message_ptr(level, message.as_ptr()) }
+        unsafe { log_message_ptr(level, message) }
     } else {
         let message = message.to_owned();
-        exec_foreground(move || unsafe { log_message_ptr(level, message.as_ptr()) })
+        exec_foreground(move || unsafe { log_message_ptr(level, &message) })
     }
 }
 
-unsafe fn log_message_ptr(level: LogLevel, message: *const c_char) {
+unsafe fn log_message_ptr(level: LogLevel, message: &CStr) {
     let lines = tlf::LINES;
     tlf::clear_line(lines - 1);
-    tlf::mvaddstr(lines - 1, 0, message);
+    tlf::mvaddstr(lines - 1, 0, message.as_ptr());
     tlf::refreshp();
 
     match level {
@@ -73,7 +73,7 @@ macro_rules! shownr {
 
 pub(crate) use shownr;
 
-use crate::background_process::{exec_foreground, in_foreground};
+use crate::foreground::{exec_foreground, in_foreground};
 
 #[repr(i32)]
 pub enum CResult {

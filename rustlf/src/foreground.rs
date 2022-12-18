@@ -166,3 +166,23 @@ pub extern "C" fn fg_usleep(micros: c_ulong) {
 pub extern "C" fn fg_sleep(secs: c_uint) {
     fg_sleep_inner(Duration::from_secs(secs.into()))
 }
+
+pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
+    if in_foreground() {
+        f()
+    } else {
+        with_foreground(|fg| fg.schedule_nowait(|_| f()).expect("send error"))
+    }
+}
+
+pub(crate) fn in_foreground() -> bool {
+    FOREGROUND_WORKER.with(|fg| fg.borrow().is_some())
+}
+
+pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
+    FOREGROUND_HANDLE.with(|fg| {
+        let fg = fg.borrow();
+        let fg = fg.as_ref().expect("called from wrong thread");
+        f(fg)
+    })
+}

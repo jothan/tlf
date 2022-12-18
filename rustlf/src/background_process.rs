@@ -4,9 +4,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use crate::err_utils::{log_message, LogLevel};
-use crate::foreground::{
-    ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE, FOREGROUND_WORKER,
-};
+use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
 use crate::hamlib::Rig;
 use crate::netkeyer::Netkeyer;
 use crate::workqueue::{WorkSender, Worker};
@@ -132,30 +130,10 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
 pub(crate) type BackgroundContext = Option<Rig>;
 
-pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
-    FOREGROUND_HANDLE.with(|fg| {
-        let fg = fg.borrow();
-        let fg = fg.as_ref().expect("called from wrong thread");
-        f(fg)
-    })
-}
-
 pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>(f: F) -> T {
     BACKGROUND_HANDLE.with(|bg| {
         let bg = bg.borrow();
         let bg = bg.as_ref().expect("called from wrong thread");
         f(bg)
     })
-}
-
-pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
-    if in_foreground() {
-        f()
-    } else {
-        with_foreground(|fg| fg.schedule_nowait(|_| f()).expect("send error"))
-    }
-}
-
-pub(crate) fn in_foreground() -> bool {
-    FOREGROUND_WORKER.with(|fg| fg.borrow().is_some())
 }

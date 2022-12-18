@@ -12,10 +12,11 @@ use std::{
 };
 
 use crate::{
-    background_process::{with_background, with_foreground, BackgroundContext},
+    background_process::{with_background, BackgroundContext},
     bands::freq2band,
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
+    foreground::with_foreground,
     workqueue::WorkSender,
 };
 
