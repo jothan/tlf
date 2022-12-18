@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
-use crate::err_utils::{log_message_static, CResult, LogLevel};
+use crate::err_utils::{switch_to_ssb, CResult};
 
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Arc<Option<Netkeyer>>> = RefCell::new(Arc::new(None));
@@ -322,8 +322,7 @@ pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
         if let Some(ref netkeyer) = **netkeyer.borrow() {
             netkeyer.write_tone(tone).expect("netkeyer send error");
         } else {
-            log_message_static!(LogLevel::INFO, "keyer not active; switching to SSB");
-            tlf::trxmode = tlf::SSBMODE as _;
+            switch_to_ssb();
         }
     });
 

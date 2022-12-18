@@ -1,7 +1,7 @@
 use std::os::unix::ffi::OsStrExt;
 use std::{
     borrow::Cow,
-    ffi::{c_char, c_int, CStr, CString, OsStr},
+    ffi::{c_char, CStr, CString, OsStr},
     io::Write,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -11,7 +11,7 @@ use std::{
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
-use crate::err_utils::log_message_static;
+use crate::err_utils::{log_message_static, switch_to_ssb};
 use crate::hamlib::Rig;
 use crate::{
     err_utils::{log_message, LogLevel},
@@ -154,13 +154,7 @@ fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkey
                 // FIXME: should this be silent ?
                 let _ = file.write_all(data.as_bytes());
             }
-            Err(_) => {
-                log_message_static!(LogLevel::WARN, "1278 not active. Switching to SSB mode.");
-                unsafe {
-                    tlf::trxmode = tlf::SSBMODE as c_int;
-                    tlf::clear_display();
-                }
-            }
+            Err(_) => switch_to_ssb(),
         }
     } else if digikeyer == tlf::GMFSK {
         let path = unsafe { CStr::from_ptr(&tlf::rttyoutput as *const i8) };

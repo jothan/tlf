@@ -1,4 +1,4 @@
-use std::ffi::{CStr, CString};
+use std::ffi::{c_int, CStr, CString};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -62,6 +62,8 @@ macro_rules! shownr {
 
 pub(crate) use shownr;
 
+use crate::background_process::exec_foreground;
+
 #[repr(i32)]
 pub enum CResult {
     Ok = 0,
@@ -84,4 +86,14 @@ impl<T> From<Option<T>> for CResult {
             None => CResult::Err,
         }
     }
+}
+
+pub(crate) fn switch_to_ssb() {
+    exec_foreground(|| {
+        log_message_static!(LogLevel::WARN, "keyer not active; switching to SSB");
+        unsafe {
+            tlf::trxmode = tlf::SSBMODE as c_int;
+            tlf::clear_display();
+        }
+    });
 }

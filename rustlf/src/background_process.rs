@@ -4,7 +4,9 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use crate::err_utils::{log_message, LogLevel};
-use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
+use crate::foreground::{
+    ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE, FOREGROUND_WORKER,
+};
 use crate::hamlib::Rig;
 use crate::netkeyer::{Netkeyer, NETKEYER};
 use crate::workqueue::{WorkSender, Worker};
@@ -189,4 +191,12 @@ pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>
         let fg = fg.as_ref().expect("called from wrong thread");
         f(fg)
     })
+}
+
+pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
+    if FOREGROUND_WORKER.with(|fg| fg.borrow().is_some()) {
+        f()
+    } else {
+        with_foreground(|fg| fg.schedule_nowait(|_| f()).expect("send error"))
+    }
 }
