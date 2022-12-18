@@ -116,10 +116,6 @@ prefix_data *getctyinfo(char *call) {
     return NULL;
 }
 
-void clear_line() {
-    //empty
-}
-
 int modify_attr(int attr) {
     // TBD
     return 0;
@@ -133,12 +129,6 @@ void handle_logging(enum log_lvl lvl, ...) {
     // empty
 }
 
-void clear_display(void) {
-}
-
-void shownr(const char *message, int nr) {}
-void init_controller(void) {}
-void display_cw_speed(unsigned int wpm) {}
 
 /* setup/teardown */
 int setup_default(void **state) {

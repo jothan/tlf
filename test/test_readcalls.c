@@ -45,10 +45,8 @@ void restore_comment() {}
 void cleanup_hiscall() {}
 void rst_reset() {}
 void readqtccalls() {}
-void shownr(char *msg, int x) {}
 
 void clusterinfo(void) {}
-void clear_display(void) {}
 void refresh_splitlayout() {}
 
 void OnLowerSearchPanel(int x, char *str) {}
@@ -64,7 +62,6 @@ void qtc_main_panel(int direction) {}
 void add_local_spot() {}
 void sendmessage(const char *msg) {}
 void printcall(const char *msg) {}
-unsigned int  GetCWSpeed() { return 10; }
 int speedup() { return 12; }
 int speeddown() { return 8; }
 void rst_recv_up() {}

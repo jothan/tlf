@@ -11,12 +11,8 @@
 
 // OBJECT ../src/checklogfile.o
 // OBJECT ../src/err_utils.o
+// OBJECT ../src/bands.o
 
-// dummy
-void shownr(char *msg, int x) {
-}
-void clear_line(int row) {
-}
 
 extern char logfile[];
 

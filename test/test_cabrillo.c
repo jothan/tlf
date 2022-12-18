@@ -57,9 +57,6 @@ simstate_t get_simulator_state() {
 void set_simulator_state(simstate_t s) {
 }
 
-void keyer_append(const char *string) {
-}
-
 int modify_attr(int attr) { // FIXME: remove once info() moved to UI code
     return 0;
 }

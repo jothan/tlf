@@ -51,12 +51,6 @@ int stoptx() {
     return 0;
 }
 
-// clear_display.c
-void clear_display() {
-}
-void clear_line(int row) {
-}
-
 // clusterinfo.c
 void clusterinfo() {
 }

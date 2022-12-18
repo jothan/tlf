@@ -115,3 +115,8 @@ void cqww_simulator(void) {
 }
 int fldigi_get_carrier(void) { return 0; }
 void send_bandswitch(freq_t freq) {};
+void clear_display(void) {}
+void clear_line(int line) {}
+void shownr(char *msg, int x) {}
+void init_controller(void) {}
+void display_cw_speed(unsigned int wpm) {}

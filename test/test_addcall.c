@@ -30,7 +30,6 @@ int addmult(struct qso_t *qso) { return -1; }
 void addmult_lan() {}
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
-void clear_display() {}
 int pacc_pa(void) {
     return 0;
 }

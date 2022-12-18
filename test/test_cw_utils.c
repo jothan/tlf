@@ -5,11 +5,6 @@
 
 // OBJECT ../src/dummy.o
 
-void clear_line(int line) { abort(); }
-void clear_display(void) {}
-void display_cw_speed(unsigned int wpm) {}
-void shownr(const char *message, int nr) {}
-void init_controller(void) {}
 const unsigned int bandcorner[NBANDS][2] = {
     { 1800000, 2000000 },	// band bottom, band top
     { 3500000, 4000000 },
