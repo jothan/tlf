@@ -305,9 +305,9 @@ impl Rig {
         retval_to_result(retval)
             .map(|_| unsafe { value.assume_init().i as c_uint })
             .map_err(|e| {
-                log_message(
+                log_message!(
                     LogLevel::WARN,
-                    format!("Could not read CW speed from rig : {e}"),
+                    format!("Could not read CW speed from rig : {e}")
                 );
                 e
             })
@@ -735,6 +735,6 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
 }
 
 fn print_error(e: GenericError) -> GenericError {
-    log_message(LogLevel::WARN, format!("Problem with rig link: {e}"));
+    log_message!(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
 }

@@ -11,12 +11,9 @@ use std::{
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
-use crate::err_utils::{log_message_static, switch_to_ssb};
+use crate::err_utils::{log_message, switch_to_ssb, LogLevel};
 use crate::hamlib::Rig;
-use crate::{
-    err_utils::{log_message, LogLevel},
-    netkeyer::Netkeyer,
-};
+use crate::netkeyer::Netkeyer;
 
 const KEYER_QUEUE_SIZE: usize = 400;
 
@@ -141,7 +138,7 @@ fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkey
 
         let rig = rig.expect("no rig when needed");
         if let Err(e) = rig.keyer_send(data) {
-            log_message(LogLevel::WARN, format!("CW send error: {e}"));
+            log_message!(LogLevel::WARN, format!("CW send error: {e}"));
         }
     } else if cwkeyer == tlf::MFJ1278_KEYER || digikeyer == tlf::MFJ1278_KEYER {
         let path = unsafe { CStr::from_ptr(&tlf::controllerport as *const i8) }.to_string_lossy();
@@ -161,7 +158,7 @@ fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkey
         let path = OsStr::from_bytes(path.to_bytes());
 
         if path.is_empty() {
-            log_message_static!(LogLevel::WARN, "No modem file specified!");
+            log_message!(LogLevel::WARN, "No modem file specified!");
         }
 
         let mut data_bytes = data.into_bytes();

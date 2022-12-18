@@ -124,7 +124,7 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
         // get freq info from TRX
         if let Some(rig) = rig.as_mut() {
             let _ = rig.poll().map_err(|e| {
-                log_message(LogLevel::WARN, format!("Problem reading radio status: {e}"));
+                log_message!(LogLevel::WARN, format!("Problem reading radio status: {e}"));
             });
         }
     }
