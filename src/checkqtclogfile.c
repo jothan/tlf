@@ -31,6 +31,7 @@
 
 #include "qtcvars.h"		// Includes globalvars.h
 #include "startmsg.h"
+#include "rust.h"
 
 
 int checkqtclogfile() {
@@ -50,7 +51,7 @@ int checkqtclogfile() {
 	    if (errno == ENOENT) {
 		/* File not found, create new one */
 		showmsg("Log file not found, creating new one");
-		sleep(1);
+		fg_sleep(1);
 		if ((fp = fopen(QTC_SENT_LOG, "w")) == NULL) {
 		    /* cannot create logfile */
 		    showmsg("Creating QTC logfile not possible");
@@ -73,7 +74,7 @@ int checkqtclogfile() {
 	    if (errno == ENOENT) {
 		/* File not found, create new one */
 		showmsg("Log file not found, creating new one");
-		sleep(1);
+		fg_sleep(1);
 		if ((fp = fopen(QTC_RECV_LOG, "w")) == NULL) {
 		    /* cannot create logfile */
 		    showmsg("Creating QTC logfile not possible");

@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::ffi::{c_int, c_uint, c_void};
+use std::ffi::{c_int, c_uint, c_ulong, c_void};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -7,19 +7,26 @@ use crate::background_process::BackgroundContext;
 use crate::err_utils::{showmsg, shownr};
 use crate::hamlib::{set_outfreq, Error, Rig, RigConfig};
 use crate::netkeyer::Netkeyer;
-use crate::workqueue::{workqueue, WorkSender};
+use crate::workqueue::{workqueue, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
 
 const BACKGROUND_QUEUE_SIZE: usize = 16;
+const FOREGROUND_QUEUE_SIZE: usize = 16;
+
+pub(crate) type ForegroundContext = ();
 
 thread_local! {
     pub(crate) static BACKGROUND_HANDLE: RefCell<Option<WorkSender<BackgroundContext>>> = RefCell::new(None);
+    pub(crate) static FOREGROUND_HANDLE: RefCell<Option<WorkSender<ForegroundContext>>> = RefCell::new(None);
+    pub(crate) static FOREGROUND_WORKER: RefCell<Option<Worker<ForegroundContext>>> = RefCell::new(None);
 }
 
 #[no_mangle]
 pub extern "C" fn foreground_init() -> *mut c_void {
     let (bg_producer, bg_worker) = workqueue::<BackgroundContext>(BACKGROUND_QUEUE_SIZE);
+    let (fg_producer, fg_worker) = workqueue::<ForegroundContext>(FOREGROUND_QUEUE_SIZE);
     BACKGROUND_HANDLE.with(|bg| *bg.borrow_mut() = Some(bg_producer));
+    FOREGROUND_WORKER.with(|bg| *bg.borrow_mut() = Some(fg_worker));
 
     let rig = unsafe { hamlib_init().ok() };
 
@@ -33,6 +40,7 @@ pub extern "C" fn foreground_init() -> *mut c_void {
         keyer_consumer,
         netkeyer,
         worker: bg_worker,
+        fg_producer,
         rig,
     });
     Box::into_raw(bg_config) as *mut c_void
@@ -127,4 +135,34 @@ unsafe fn keyer_init(rig: &Option<Rig>) -> Arc<Option<Netkeyer>> {
     }
 
     netkeyer
+}
+
+#[no_mangle]
+pub extern "C" fn process_foreground_work() {
+    FOREGROUND_WORKER.with(|fg| {
+        if let Some(ref fg) = *fg.borrow() {
+            fg.process_pending(&mut ())
+                .expect("fg worker receive problem");
+        }
+    })
+}
+
+#[inline]
+fn fg_sleep_inner(delay: Duration) {
+    FOREGROUND_WORKER.with(|fg| {
+        if let Some(ref fg) = *fg.borrow() {
+            fg.process_sleep(&mut (), delay)
+                .expect("fg worker receive problem");
+        }
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn fg_usleep(micros: c_ulong) {
+    fg_sleep_inner(Duration::from_micros(micros));
+}
+
+#[no_mangle]
+pub extern "C" fn fg_sleep(secs: c_uint) {
+    fg_sleep_inner(Duration::from_secs(secs.into()))
 }

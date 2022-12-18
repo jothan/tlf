@@ -108,7 +108,7 @@ static void flash_field(int row, int column, char *value) {
     mvaddstr(7 + row, column, value);
     curs_set(0);        // hide cursor
     refreshp();
-    usleep(200*1000);   // 200 ms
+    fg_usleep(200*1000);   // 200 ms
     curs_set(1);        // show cursor
     // note: line will be re-displayed in the main loop
 }

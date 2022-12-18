@@ -34,6 +34,7 @@
 
 #include "sockserv.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 
 /* This structure holds the buffers for each open socket.  It was an */
@@ -118,7 +119,7 @@ int usputb(int s, char *buf, int buflen) {
 //	    myperror("usputb:write");
 	    wprintw(sclwin, "Not connected !!");
 	    wrefresh(sclwin);
-	    sleep(2);
+	    fg_sleep(2);
 	    return -1;
 	} else
 	    return buflen;
@@ -480,7 +481,7 @@ int startcliaddr(int family, unsigned long int addr,
 	if (errno != EINTR) {
 	    wprintw(sclwin, "socket failure");
 	    wrefresh(sclwin);
-	    sleep(1);
+	    fg_sleep(1);
 	    return -1;
 	}
     }
@@ -500,7 +501,7 @@ int startcliaddr(int family, unsigned long int addr,
 
     wprintw(sclwin, "still here...");
     wrefresh(sclwin);
-    sleep(2);
+    fg_sleep(2);
 
     sockbuf[s].buf = (char *) malloc(sizeof(char) * SOBUF);
 
@@ -511,7 +512,7 @@ int startcliaddr(int family, unsigned long int addr,
 
     wprintw(sclwin, "not dead...");
     wrefresh(sclwin);
-    sleep(1);
+    fg_sleep(1);
 
     return s;
 }

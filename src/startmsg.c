@@ -23,6 +23,7 @@
 #include "ignore_unused.h"
 #include "globalvars.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 static int linectr = 0;
@@ -44,7 +45,7 @@ void clearmsg_wait(void) {
 	refreshp();
 	IGNORE(key_get());
     } else {
-	sleep(1);
+	fg_sleep(1);
     }
     clearmsg();
 }

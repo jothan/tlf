@@ -146,7 +146,7 @@ int getexchange(void) {
 	x = -1;
 	while (x < 1) {
 
-	    usleep(10000);
+	    fg_usleep(10000);
 
 	    time_update();
 

@@ -55,7 +55,7 @@ static int get_autocq_time() {
 
 static int wait_50ms_for_key() {
 
-    usleep(50 * 1000);
+    fg_usleep(50 * 1000);
 
     const int inchar = key_poll();
     if (inchar > 0 && inchar != KEY_RESIZE) {

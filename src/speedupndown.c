@@ -63,13 +63,13 @@ void setspeed(void) {
 	char *msg;
 
 	sendmessage("\\\015");
-	usleep(500000);
+	fg_usleep(500000);
 
 	msg = g_strdup_printf("MSP %2u \015", cwspeed);
 	sendmessage(msg);
 	g_free(msg);
 
-	usleep(500000);
+	fg_usleep(500000);
 	sendmessage("CONV\015\n");
     }
 }

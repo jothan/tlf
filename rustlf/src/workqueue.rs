@@ -66,7 +66,6 @@ pub(crate) struct Worker<C: ?Sized> {
 }
 
 impl<C: ?Sized> Worker<C> {
-    #[allow(unused)]
     pub(crate) fn process_pending(&self, context: &mut C) -> Result<(), TryRecvError> {
         loop {
             match self.handle.try_recv() {

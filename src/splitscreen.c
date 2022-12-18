@@ -51,6 +51,7 @@
 #include "tlf_panel.h"
 #include "ui_utils.h"
 #include "err_utils.h"
+#include "rust.h"
 
 struct tln_logline {
     struct tln_logline *next;
@@ -793,7 +794,7 @@ int init_packet(void) {
 	    wprintw(sclwin,
 		    "\n\nconnect  failed... please check network connectivity !!\n");
 	    wrefresh(sclwin);
-	    sleep(2);
+	    fg_sleep(2);
 
 	    return (-1);
 	} else {
@@ -808,7 +809,7 @@ int init_packet(void) {
 	if ((fdSertnc = open(tncportname, O_RDWR | O_NONBLOCK)) < 0) {
 	    wprintw(sclwin, "open of %s failed!!!\n", tncportname);
 	    wrefresh(sclwin);
-	    sleep(2);
+	    fg_sleep(2);
 	    return -1;
 	}
 
@@ -866,24 +867,24 @@ int init_packet(void) {
 	    wprintw(sclwin, "FIFO clfile exists...\n");
 	    wrefresh(sclwin);
 	    if (verbose)
-		sleep(1);
+		fg_sleep(1);
 	} else {
 	    wprintw(sclwin, "FIFO clfile made\n");
 	    wrefresh(sclwin);
 	    if (verbose)
-		sleep(1);
+		fg_sleep(1);
 
 	}
 
 	if ((fdFIFO = open("clfile", O_RDONLY | O_NONBLOCK)) < 0) {
 	    wprintw(sclwin, "Open FIFO failed\n");
 	    wrefresh(sclwin);
-	    sleep(1);
+	    fg_sleep(1);
 	} else {
 	    wprintw(sclwin, "FIFO clfile open\n\n");
 	    wrefresh(sclwin);
 	    if (verbose)
-		sleep(1);
+		fg_sleep(1);
 
 	}
     }
@@ -962,7 +963,7 @@ int packet() {
     }
 
     in_packetclient = 1;
-    sleep(1);
+    fg_sleep(1);
 
     show_panel(packet_panel);
 
@@ -978,7 +979,7 @@ int packet() {
 	    usputs(prsock, clusterlogin);
 	    sent_login = 1;
 	    addtext("logged into cluster...\n\n");
-	    sleep(1);
+	    fg_sleep(1);
 
 	    hide_panel(packet_panel);
 
@@ -1013,7 +1014,7 @@ int packet() {
 		    wprintw(sclwin,
 			    "There is no connection.... going back to tlf !!\n");
 		    wrefresh(sclwin);
-		    sleep(2);
+		    fg_sleep(2);
 		    i = -1;
 		}
 

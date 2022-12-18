@@ -60,7 +60,7 @@ int readqtccalls() {
 
 	if ((fp = fopen(QTC_SENT_LOG, "r")) == NULL) {
 	    showmsg("Error opening QTC sent logfile.");
-	    sleep(2);
+	    fg_sleep(2);
 	    return -1;
 	}
 
@@ -109,7 +109,7 @@ int readqtccalls() {
 
 	if ((fp = fopen(QTC_RECV_LOG, "r")) == NULL) {
 	    showmsg("Error opening QTC received logfile.");
-	    sleep(2);
+	    fg_sleep(2);
 	    return -1;
 	}
 
@@ -130,7 +130,7 @@ int readqtccalls() {
 
 	if ((fp = fopen(qtc_cap_calls, "r")) == NULL) {
 	    showmsg("Error opening QTC callsigns file.");
-	    sleep(2);
+	    fg_sleep(2);
 	    return -1;
 	}
 

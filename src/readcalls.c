@@ -50,6 +50,7 @@
 #include "startmsg.h"
 #include "store_qso.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 /* Backup original logfile and write a new one from internal database */
@@ -65,7 +66,7 @@ void do_backup(const char *logfile, bool interactive) {
 	    }
 	    if (interactive) {
 		showstring("Log has been backed up as", backup);
-		sleep(1);
+		fg_sleep(1);
 	    }
 	    g_free(backup);
 }
@@ -245,13 +246,13 @@ int synclog(char *synclogfile) {
 	showstring("\nCopying logfile %s failed\n", logfile);
 
     showmsg("Backing up logfile.\n");
-    sleep(1);
+    fg_sleep(1);
     sprintf(wgetcmd, "cp %s %s%s", logfile, date_buf, logfile);
     if (system(wgetcmd) != 0)
 	showstring("\nCopying logfile %s to backup failed\n", logfile);
 
     showmsg("Merging logfiles...\n");
-    sleep(1);
+    fg_sleep(1);
     sprintf(wgetcmd, "cat log1 log2 | sort -g -k4,4 | uniq  > %s",
 	    logfile);
     if (system(wgetcmd) == 0)
@@ -261,7 +262,7 @@ int synclog(char *synclogfile) {
 	sleep(5);
 	exit(1);
     }
-    sleep(1);
+    fg_sleep(1);
     IGNORE(system("rm log1"));;
     IGNORE(system("rm log2"));;
 

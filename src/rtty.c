@@ -38,6 +38,7 @@
 #include "startmsg.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #include "fldigixmlrpc.h"
 
@@ -53,7 +54,7 @@ int init_controller() {
     if ((fdcont = open(controllerport, O_RDWR | O_NONBLOCK)) < 0) {
 	showstring(controllerport,
 		   ": Open failed for controller port!!!\n");
-	sleep(1);
+	fg_sleep(1);
 	return -1;
     }
 

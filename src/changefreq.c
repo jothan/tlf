@@ -109,7 +109,7 @@ void change_freq(void) {
 
 	freq_display();
 
-	usleep(100 * 1000);
+	fg_usleep(100 * 1000);
 
     }
     curs_set(1);

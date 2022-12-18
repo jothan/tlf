@@ -44,6 +44,7 @@
 #include "scroll_log.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #define QTCRECVCALLPOS 30
 #define QTCSENTCALLPOS 35
@@ -59,7 +60,7 @@ void delete_last_qtcs(char *call, char *bandmode) {
     if (qtcdirection & RECV) {
 	if ((qtcfile = open(QTC_RECV_LOG, O_RDWR)) < 0) {
 	    mvaddstr(5, 0, "Error opening QTC received logfile.\n");
-	    sleep(1);
+	    fg_sleep(1);
 	}
 	fstat(qtcfile, &qstatbuf);
 	if ((int)qstatbuf.st_size > QTCRECVCALLPOS) {
@@ -93,7 +94,7 @@ void delete_last_qtcs(char *call, char *bandmode) {
     if (qtcdirection & SEND) {
 	if ((qtcfile = open(QTC_SENT_LOG, O_RDWR)) < 0) {
 	    mvaddstr(5, 0, "Error opening QTC sent logfile.\n");
-	    sleep(1);
+	    fg_sleep(1);
 	}
 	fstat(qtcfile, &qstatbuf);
 	if ((int)qstatbuf.st_size > QTCSENTCALLPOS) {

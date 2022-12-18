@@ -140,7 +140,7 @@ int changepars(void) {
     attron(COLOR_PAIR(C_HEADER));
     mvaddstr(12, 29, "PARAMETER?  ");
     refreshp();
-    usleep(400000);
+    fg_usleep(400000);
     mvaddstr(12, 29, "            ");
 
     echo();
@@ -221,7 +221,7 @@ int changepars(void) {
 	    demode = !demode;
 	    mvprintw(13, 29, "DE-mode is %d", demode);
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -234,7 +234,7 @@ int changepars(void) {
 	    }
 	    mvprintw(13, 29, "CONTEST-mode is %s", iscontest ? "on" : "off");
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -244,7 +244,7 @@ int changepars(void) {
 		announcefilter = 0;
 	    mvprintw(13, 29, "FILTER-mode is %d", announcefilter);
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -252,7 +252,7 @@ int changepars(void) {
 	    showscore_flag = !showscore_flag;
 	    mvprintw(13, 29, "Show score-mode is %d", showscore_flag);
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -286,7 +286,7 @@ int changepars(void) {
 	case 22: {		/* COUNTRIES */
 	    show_mults();
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -305,7 +305,7 @@ int changepars(void) {
 	    else
 		mvaddstr(13, 29, "TRXMODE = DIG");
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -341,7 +341,7 @@ int changepars(void) {
 		mvaddstr(13, 29, "RIT clear off");
 	    }
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -354,7 +354,7 @@ int changepars(void) {
 		mvaddstr(13, 29, "TRX control off");
 	    }
 	    refreshp();
-	    sleep(1);
+	    fg_sleep(1);
 
 	    break;
 	}
@@ -406,7 +406,7 @@ int changepars(void) {
 		} else {
 		    mvaddstr(13, 29, "Simulator on");
 		    refreshp();
-		    sleep(1);
+		    fg_sleep(1);
 		}
 
 		if (cwkeyer == NET_KEYER) {
@@ -421,7 +421,7 @@ int changepars(void) {
 		simulator = false;
 		mvaddstr(13, 29, "Simulator off");
 		refreshp();
-		sleep(1);
+		fg_sleep(1);
 
 		if (cwkeyer == NET_KEYER) {
 
@@ -527,7 +527,7 @@ int changepars(void) {
 	    volumebuffer = sc_volume;
 	    mvaddstr(12, 29, "Vol: pgup/dwn");
 	    refreshp();
-	    usleep(500000);
+	    fg_usleep(500000);
 	    mvaddstr(12, 29, "Vol:         ");
 	    mvprintw(12, 29, "Vol: %d", volumebuffer);
 

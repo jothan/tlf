@@ -32,6 +32,7 @@
 #include "tlf_panel.h"
 #include "startmsg.h"
 #include "splitscreen.h"
+#include "rust.h"
 
 
 extern int ymax, xmax;
@@ -117,7 +118,7 @@ void lookup_keys() {
 	showmsg("See ':CQD' in man page for setting Auto_CQ delay");
 	showmsg("");
 	beep();
-	sleep(2);
+	fg_sleep(2);
     }
 }
 
@@ -146,6 +147,7 @@ static int getkey(int wait) {
 
     nodelay(stdscr, wait ? FALSE : TRUE);
 
+    process_foreground_work();
     x = onechar();
 
     if (x == KEY_RESIZE) {

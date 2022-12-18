@@ -42,6 +42,7 @@
 #include "cabrillo_utils.h"
 #include "sendbuf.h"
 #include "bands.h"
+#include "rust.h"
 
 char exchange[40];      // format of sent exchange
 
@@ -486,7 +487,7 @@ static bool process_record(struct linedata_t *qso,
     if (buffer[0] == '!') {
 	g_strchomp(buffer);
 	info(buffer + 1);   // show error message
-	sleep(2);
+	fg_sleep(2);
 	ok = false;
     }
 
@@ -505,7 +506,7 @@ int write_cabrillo(void) {
 
     if (cabrillo == NULL) {
 	info("Missing CABRILLO= keyword (see man page)");
-	sleep(2);
+	fg_sleep(2);
 	return 1;
     }
 
@@ -517,14 +518,14 @@ int write_cabrillo(void) {
 
     if (!cabdesc) {
 	info("Cabrillo format specification not found!");
-	sleep(2);
+	fg_sleep(2);
 	return 2;
     }
 
     /* open logfile and create a Cabrillo file */
     if ((fp1 = fopen(logfile, "r")) == NULL) {
 	info("Can't open logfile.");
-	sleep(2);
+	fg_sleep(2);
 	free_cabfmt(cabdesc);
 	return 1;
     }
@@ -533,7 +534,7 @@ int write_cabrillo(void) {
 	    fpqtcrec = fopen(QTC_RECV_LOG, "r");
 	    if (fpqtcrec == NULL) {
 		info("Can't open received QTC logfile.");
-		sleep(2);
+		fg_sleep(2);
 		free_cabfmt(cabdesc);
 		fclose(fp1);
 		return 1;
@@ -543,7 +544,7 @@ int write_cabrillo(void) {
 	    fpqtcsent = fopen(QTC_SENT_LOG, "r");
 	    if (fpqtcsent == NULL) {
 		info("Can't open sent QTC logfile.");
-		sleep(2);
+		fg_sleep(2);
 		free_cabfmt(cabdesc);
 		fclose(fp1);
 		if (fpqtcrec != NULL) fclose(fpqtcrec);
@@ -555,7 +556,7 @@ int write_cabrillo(void) {
     get_cabrillo_file_name(cabrillo_file_name);
     if ((fp2 = fopen(cabrillo_file_name, "w")) == NULL) {
 	info("Can't create Cabrillo file.");
-	sleep(2);
+	fg_sleep(2);
 	free_cabfmt(cabdesc);
 	fclose(fp1);
 	if (fpqtcsent != NULL) fclose(fpqtcsent);
@@ -635,7 +636,7 @@ int write_cabrillo(void) {
     free_cabfmt(cabdesc);
 
     if (get_time() == start_time) {
-	sleep(1);
+	fg_sleep(1);
     }
 
     return 0;
@@ -781,7 +782,7 @@ int write_adif(void) {
 
     if ((fp1 = fopen(logfile, "r")) == NULL) {
 	info("Opening logfile not possible.");
-	sleep(2);
+	fg_sleep(2);
 	return 1;
     }
     strcpy(adif_tmp_name, whichcontest);
@@ -789,7 +790,7 @@ int write_adif(void) {
 
     if ((fp2 = fopen(adif_tmp_name, "w")) == NULL) {
 	info("Opening ADIF file not possible.");
-	sleep(2);
+	fg_sleep(2);
 	fclose(fp1);		//added by F8CFE
 	return 2;
     }
@@ -816,7 +817,7 @@ int write_adif(void) {
     fclose(fp2);
 
     if (get_time() == start_time) {
-	sleep(1);
+	fg_sleep(1);
     }
 
     return 0;

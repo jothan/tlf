@@ -28,6 +28,7 @@
 #include "qtcutil.h"
 #include "qtcvars.h"		// Includes globalvars.h
 #include "tlf_curses.h"
+#include "rust.h"
 
 
 GHashTable *qtc_store = NULL; 	/* stores number of QTCs per callsign */
@@ -60,7 +61,7 @@ void qtc_meta_write() {
     if ((fp = fopen(QTC_META_LOG, "w")) == NULL) {
 	mvaddstr(5, 0, "Error opening QTC meta logfile.\n");
 	refreshp();
-	sleep(2);
+	fg_sleep(2);
     } else {
 	while (qtc_key_list != NULL) {
 	    qtc_obj = g_hash_table_lookup(qtc_store, qtc_key_list->data);

@@ -446,7 +446,7 @@ void qtc_main_panel(int direction) {
 
 	while (x < 1) {
 
-	    usleep(5000);
+	    fg_usleep(5000);
 	    time_update();
 	    if (trxmode == DIGIMODE && digikeyer != NO_KEYER) {
 		show_rtty();
@@ -791,7 +791,7 @@ void qtc_main_panel(int direction) {
 		    prevqtccall[0] = '\0';
 		    qtccallsign[0] = '\0';
 		    refreshp();
-		    sleep(1);
+		    fg_sleep(1);
 		    x = ESCAPE;	// <Escape> close the window
 
 		}
@@ -1728,7 +1728,7 @@ void show_rtty_lines() {
 
 	while (x < 1) {
 
-	    usleep(1000);
+	    fg_usleep(1000);
 	    time_update();
 
 	    if (miniterm == 1 && trxmode == DIGIMODE && digikeyer != NO_KEYER) {

@@ -42,6 +42,7 @@
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 /** Repair log file
@@ -107,7 +108,7 @@ int repair_log(char *filename) {
     g_free(backupfile);
 
     showmsg("Done");
-    sleep(2);
+    fg_sleep(2);
 
     return 0;
 }
@@ -132,7 +133,7 @@ int checklogfile_new(char *filename) {
 	if (errno == ENOENT) {
 	    /* File not found, create new one */
 	    showmsg("Log file not found, creating new one");
-	    sleep(2);
+	    fg_sleep(2);
 	    if ((fp = fopen(filename, "w")) == NULL) {
 		/* cannot create logfile */
 		showmsg("Creating logfile not possible");

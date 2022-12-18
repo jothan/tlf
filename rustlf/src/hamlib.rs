@@ -12,7 +12,7 @@ use std::{
 };
 
 use crate::{
-    background_process::{with_background, BackgroundContext},
+    background_process::{with_background, with_foreground, BackgroundContext},
     bands::freq2band,
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
@@ -454,9 +454,13 @@ impl Rig {
     }
 
     fn change_freq(&mut self, state: &RigState) -> Result<tlf::freq_t, Error> {
-        // TODO: broadcast frequency properly from here
         let Some(freq) = state.freq else {
-            unsafe { tlf::freq = 0. };
+            with_foreground(|fg| {
+                fg.schedule_nowait(move |_| unsafe {
+                    tlf::freq = 0.;
+                }).unwrap()
+            });
+
             return Err(Error::Poll);
         };
         let freq = radio_to_display_frequency(freq, Some(state));
@@ -466,15 +470,22 @@ impl Rig {
             }
         }
 
-        if freq > 0. {
-            unsafe { tlf::freq = freq };
-            // Handle this by subscribing to the above state update
-            unsafe {
-                tlf::bandfrequency[state.bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq
-            };
-        }
-
+        self.update_display_frequency(freq);
         Ok(freq)
+    }
+
+    fn update_display_frequency(&mut self, freq: tlf::freq_t) {
+        let bandidx = freq2band(freq as c_uint);
+
+        if freq > 0. {
+            with_foreground(|fg| {
+                fg.schedule_nowait(move |_| unsafe {
+                    tlf::freq = freq;
+                    tlf::bandfrequency[bandidx.unwrap_or(tlf::BANDINDEX_OOB as usize)] = freq;
+                })
+                .unwrap()
+            });
+        }
     }
 
     fn set_band_mode(
@@ -520,10 +531,12 @@ impl Rig {
             let new_speed = GetCWSpeed();
 
             if new_speed != rig_speed {
-                // TODO: send this to main thread
-                unsafe {
-                    tlf::display_cw_speed(new_speed);
-                }
+                with_foreground(|fg| {
+                    fg.schedule_nowait(move |_| unsafe {
+                        tlf::display_cw_speed(new_speed);
+                    })
+                    .unwrap()
+                });
             }
         }
 
@@ -604,19 +617,21 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
         return; // no rig control, ignore request
     }
 
-    if hertz > 0. {
-        with_background(|bg| {
-            bg.schedule_nowait(move |rig| {
-                let rig = rig.as_mut().unwrap();
-                let _ = rig
-                    .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
-                    .map_err(print_error);
-            })
-            .expect("background send error")
-        });
-    } else if hertz < 0. {
+    if hertz <= 0. {
         with_background(|bg| outfreq_request(hertz, bg));
+        return;
     }
+
+    with_background(|bg| {
+        bg.schedule_nowait(move |rig| {
+            let rig = rig.as_mut().unwrap();
+            let _ = rig
+                .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
+                .map_err(print_error);
+            rig.update_display_frequency(hertz);
+        })
+        .expect("background send error")
+    });
 }
 
 #[no_mangle]
@@ -627,6 +642,7 @@ pub extern "C" fn set_outfreq_wait(hertz: tlf::freq_t) {
             let _ = rig
                 .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
                 .map_err(print_error);
+            rig.update_display_frequency(hertz);
         })
         .expect("background send error")
     });

@@ -104,7 +104,7 @@ void tune() {
 
 	count = count * 4;    // sleeping 1/4 second units between keypress-checks
 	while (count > 0) {
-	    usleep(250000);
+	    fg_usleep(250000);
 	    if (key_poll() != -1) {	// any key pressed ?
 		count2 = 0;    // destroy outer loop as well
 		break;
@@ -161,7 +161,7 @@ int callinput(void) {
 	x = -1;
 	while (x < 1) {
 
-	    usleep(10000);
+	    fg_usleep(10000);
 
 	    time_update();
 
@@ -370,7 +370,7 @@ int callinput(void) {
 		mvprintw(3, 2, "Weight: %3d ", weight);
 		refreshp();
 
-		usleep(800000);
+		fg_usleep(800000);
 		mvaddstr(3, 10, "   ");
 
 		echo();
@@ -1112,7 +1112,7 @@ int autosend() {
 
 	    highlightCall(char_sent + 1);
 
-	    usleep(10000);
+	    fg_usleep(10000);
 
 	    if (g_timer_elapsed(timer, NULL) > timeout_sent) {
 		/* one char sent - display and set new timeout */
@@ -1242,11 +1242,10 @@ void handle_bandswitch(int direction) {
     mvaddstr(12, 0, band[bandinx]);
 
     if (trx_control) {
-	freq = bandfrequency[bandinx]; // TODO: is this needed?
 	set_outfreq(bandfrequency[bandinx]);
     }
 
-    send_bandswitch(bandinx);
+    send_bandswitch(bandfrequency[bandinx]);
 }
 
 /** handle TRX memory operation and update screen
@@ -1278,6 +1277,6 @@ void handle_memory_operation(memory_op_t op) {
 	if (fabs(freq - newfreq) < 100) {
 	    break;
 	}
-	usleep(50000);
+	fg_usleep(50000);
     }
 }

@@ -4,7 +4,7 @@ use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 
 use crate::err_utils::{log_message, LogLevel};
-use crate::foreground::BACKGROUND_HANDLE;
+use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
 use crate::hamlib::Rig;
 use crate::netkeyer::{Netkeyer, NETKEYER};
 use crate::workqueue::{WorkSender, Worker};
@@ -57,6 +57,7 @@ pub(crate) struct BackgroundConfig {
     pub(crate) keyer_consumer: KeyerConsumer,
     pub(crate) netkeyer: Arc<Option<Netkeyer>>,
     pub(crate) worker: Worker<BackgroundContext>,
+    pub(crate) fg_producer: WorkSender<ForegroundContext>,
     pub(crate) rig: Option<Rig>,
 }
 
@@ -67,7 +68,9 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
         netkeyer,
         worker,
         mut rig,
+        fg_producer,
     } = *Box::from_raw(config as *mut BackgroundConfig);
+    FOREGROUND_HANDLE.with(|fg| *fg.borrow_mut() = Some(fg_producer));
 
     let netkeyer = (*netkeyer).as_ref();
 
@@ -177,5 +180,13 @@ pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>
         let bg = bg.borrow();
         let bg = bg.as_ref().expect("called from wrong thread");
         f(bg)
+    })
+}
+
+pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
+    FOREGROUND_HANDLE.with(|fg| {
+        let fg = fg.borrow();
+        let fg = fg.as_ref().expect("called from wrong thread");
+        f(fg)
     })
 }
