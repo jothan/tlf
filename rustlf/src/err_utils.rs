@@ -1,4 +1,4 @@
-use std::ffi::{c_int, CStr, CString};
+use std::ffi::{c_char, c_int, CStr, CString};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -10,21 +10,29 @@ pub enum LogLevel {
 }
 
 pub fn log_message_raw(level: LogLevel, message: impl AsRef<CStr>) {
-    unsafe {
-        let lines = tlf::LINES;
-        tlf::clear_line(lines - 1);
-        tlf::mvaddstr(lines - 1, 0, message.as_ref().as_ptr());
-        tlf::refreshp();
+    let message = message.as_ref();
+    if in_foreground() {
+        unsafe { log_message_ptr(level, message.as_ptr()) }
+    } else {
+        let message = message.to_owned();
+        exec_foreground(move || unsafe { log_message_ptr(level, message.as_ptr()) })
+    }
+}
 
-        match level {
-            LogLevel::DEBUG => (),
-            LogLevel::INFO => sleep(Duration::from_secs(1)),
-            LogLevel::WARN => sleep(Duration::from_secs(3)),
+unsafe fn log_message_ptr(level: LogLevel, message: *const c_char) {
+    let lines = tlf::LINES;
+    tlf::clear_line(lines - 1);
+    tlf::mvaddstr(lines - 1, 0, message);
+    tlf::refreshp();
 
-            LogLevel::ERR => {
-                sleep(Duration::from_secs(3));
-                tlf::exit(tlf::EXIT_FAILURE as i32);
-            }
+    match level {
+        LogLevel::DEBUG => (),
+        LogLevel::INFO => sleep(Duration::from_secs(1)),
+        LogLevel::WARN => sleep(Duration::from_secs(3)),
+
+        LogLevel::ERR => {
+            sleep(Duration::from_secs(3));
+            tlf::exit(tlf::EXIT_FAILURE as i32);
         }
     }
 }
@@ -65,7 +73,7 @@ macro_rules! shownr {
 
 pub(crate) use shownr;
 
-use crate::background_process::exec_foreground;
+use crate::background_process::{exec_foreground, in_foreground};
 
 #[repr(i32)]
 pub enum CResult {

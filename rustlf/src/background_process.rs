@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, c_void, CStr, CString};
+use std::ffi::{c_int, c_void};
 use std::sync::{Arc, Condvar, Mutex};
 
 use std::time::Duration;
@@ -8,7 +8,7 @@ use crate::foreground::{
     ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE, FOREGROUND_WORKER,
 };
 use crate::hamlib::Rig;
-use crate::netkeyer::{Netkeyer, NETKEYER};
+use crate::netkeyer::Netkeyer;
 use crate::workqueue::{WorkSender, Worker};
 use crate::write_keyer::{write_keyer, KeyerConsumer};
 
@@ -132,49 +132,12 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
 
 pub(crate) type BackgroundContext = Option<Rig>;
 
-pub(crate) struct PlaySoundConfig {
-    pub(crate) netkeyer: Arc<Option<Netkeyer>>,
-    pub(crate) bg_thread: Option<WorkSender<BackgroundContext>>,
-    pub(crate) audiofile: CString,
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn prepare_playsound(audiofile: *const c_char) -> *mut c_void {
-    let netkeyer = NETKEYER.with(|fg_netkeyer| fg_netkeyer.borrow().clone());
-    let bg_thread = BACKGROUND_HANDLE.with(|bg_thread| bg_thread.borrow().clone());
-
-    let audiofile = CStr::from_ptr(audiofile).to_owned();
-    fn assert_send<T: Send>() {}
-    let _ = assert_send::<PlaySoundConfig>;
-    let config = Box::new(PlaySoundConfig {
-        netkeyer,
-        bg_thread,
-        audiofile,
-    });
-    Box::into_raw(config) as *mut c_void
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn abort_playsound(config: *mut c_void) {
-    std::mem::drop(Box::from_raw(config as *mut PlaySoundConfig));
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn init_playsound(config: *mut c_void) -> *mut c_char {
-    let PlaySoundConfig {
-        netkeyer,
-        bg_thread,
-        audiofile,
-    } = *Box::from_raw(config as *mut PlaySoundConfig);
-    NETKEYER.with(|audio_netkeyer| *audio_netkeyer.borrow_mut() = netkeyer);
-    BACKGROUND_HANDLE.with(|audio_bg| *audio_bg.borrow_mut() = bg_thread);
-
-    audiofile.into_raw()
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn close_playsound(audiofile: *mut c_char) {
-    std::mem::drop(CString::from_raw(audiofile));
+pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
+    FOREGROUND_HANDLE.with(|fg| {
+        let fg = fg.borrow();
+        let fg = fg.as_ref().expect("called from wrong thread");
+        f(fg)
+    })
 }
 
 pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>(f: F) -> T {
@@ -185,18 +148,14 @@ pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>
     })
 }
 
-pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
-    FOREGROUND_HANDLE.with(|fg| {
-        let fg = fg.borrow();
-        let fg = fg.as_ref().expect("called from wrong thread");
-        f(fg)
-    })
-}
-
 pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
-    if FOREGROUND_WORKER.with(|fg| fg.borrow().is_some()) {
+    if in_foreground() {
         f()
     } else {
         with_foreground(|fg| fg.schedule_nowait(|_| f()).expect("send error"))
     }
+}
+
+pub(crate) fn in_foreground() -> bool {
+    FOREGROUND_WORKER.with(|fg| fg.borrow().is_some())
 }

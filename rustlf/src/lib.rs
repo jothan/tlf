@@ -1,6 +1,7 @@
 // unsafe, unsafe everywhere
 #![allow(clippy::missing_safety_doc)]
 
+pub mod audio;
 pub mod background_process;
 pub mod bands;
 mod cw_utils;
