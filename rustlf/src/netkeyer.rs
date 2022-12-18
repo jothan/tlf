@@ -28,6 +28,8 @@ pub(crate) enum KeyerError {
     IO(#[from] std::io::Error),
     #[error("Invalid parameter supplied")]
     InvalidParameter,
+    #[error("Invalid device")]
+    InvalidDevice,
 }
 
 pub(crate) trait TextKeyer: Send {
@@ -89,7 +91,7 @@ impl Netkeyer {
         let host = unsafe { CStr::from_ptr(&tlf::netkeyer_hostaddress as *const c_char) };
         let port = unsafe { tlf::netkeyer_port as c_uint }.try_into().unwrap();
         let netkeyer = Netkeyer::from_host_and_port(
-            host.to_str().expect("invalid netkeyer host string"),
+            host.to_str().map_err(|_| KeyerError::InvalidDevice)?,
             port,
         )?;
 
