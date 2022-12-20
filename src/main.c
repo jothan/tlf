@@ -408,7 +408,7 @@ bool convert_cabrillo = false;  /* set if the arg input is a cabrillo */
 int bandweight_points[NBANDS] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0};
 int bandweight_multis[NBANDS] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0};
 
-pthread_t background_thread;
+void *background_thread;
 static struct termios oldt, newt;
 
 /*-------------------------parse program options---------------------------*/
@@ -816,10 +816,7 @@ static void mark_GPL_seen() {
  * logit() or background_process()
  */
 static void tlf_cleanup() {
-    if (pthread_self() != background_thread) {
-	//pthread_cancel(background_thread);
-	//pthread_join(background_thread, NULL);
-    }
+    join_background_thread(background_thread);
 
     cleanup_telnet();
 
@@ -860,7 +857,6 @@ static void ignore(int sig) {
 /* ------------------------------------------------------------------------*/
 int main(int argc, char *argv[]) {
     int j;
-    int ret;
     char welcome[80];
 
     backgrnd_str = spaces(80);
@@ -969,12 +965,7 @@ int main(int argc, char *argv[]) {
     atexit(tlf_cleanup); 	/* register cleanup function */
 
     /* Create the background thread */
-    ret = pthread_create(&background_thread, NULL, background_process, bg_config);
-    if (ret) {
-	perror("pthread_create: backgound_process");
-	endwin();
-	exit(EXIT_FAILURE);
-    }
+    background_thread = spawn_background_thread(bg_config);
 
     /* now start logging  !! Does never return */
     logit();

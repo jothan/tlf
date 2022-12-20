@@ -1,7 +1,10 @@
 use std::ffi::{c_int, c_void};
 use std::sync::{Arc, Condvar, Mutex};
 
+use std::thread::JoinHandle;
 use std::time::Duration;
+
+use cstr::cstr;
 
 use crate::err_utils::{log_message, LogLevel};
 use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
@@ -13,11 +16,13 @@ use crate::write_keyer::{write_keyer, KeyerConsumer};
 struct StopFlags {
     stopped: bool,
     stop_request: bool,
+    exit_request: bool,
 }
 
 static STOP_PROCESS: Mutex<StopFlags> = Mutex::new(StopFlags {
     stopped: false,
     stop_request: true,
+    exit_request: false,
 });
 static START_COND: Condvar = Condvar::new();
 static STOPPED_COND: Condvar = Condvar::new();
@@ -37,12 +42,19 @@ pub extern "C" fn start_background_process() {
     START_COND.notify_all();
 }
 
+fn exit_background_process() {
+    let mut s = STOP_PROCESS.lock().unwrap();
+    s.stop_request = false;
+    s.exit_request = true;
+    START_COND.notify_all();
+}
+
 #[no_mangle]
 pub extern "C" fn is_background_process_stopped() -> bool {
     STOP_PROCESS.lock().unwrap().stop_request
 }
 
-fn background_process_wait() {
+fn background_process_wait() -> bool {
     let mut s = STOP_PROCESS.lock().unwrap();
 
     if s.stop_request {
@@ -51,6 +63,7 @@ fn background_process_wait() {
         s = START_COND.wait_while(s, |s| s.stop_request).unwrap();
         s.stopped = false;
     }
+    s.exit_request
 }
 
 pub(crate) struct BackgroundConfig {
@@ -61,15 +74,14 @@ pub(crate) struct BackgroundConfig {
     pub(crate) rig: Option<Rig>,
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void {
+unsafe fn background_process(config: BackgroundConfig) {
     let BackgroundConfig {
         mut keyer_consumer,
         netkeyer,
         worker,
         mut rig,
         fg_producer,
-    } = *Box::from_raw(config as *mut BackgroundConfig);
+    } = config;
     FOREGROUND_HANDLE.with(|fg| *fg.borrow_mut() = Some(fg_producer));
 
     let netkeyer = (*netkeyer).as_ref();
@@ -78,13 +90,16 @@ pub unsafe extern "C" fn background_process(config: *mut c_void) -> *mut c_void 
     let mut fldigi_rpc_cnt: bool = false;
 
     loop {
-        background_process_wait();
+        if background_process_wait() {
+            break;
+        }
+
         if worker
             .process_sleep(&mut rig, Duration::from_millis(10))
             .is_err()
         {
             // Exit thread when disconnected.
-            break std::ptr::null_mut();
+            break;
         }
 
         unsafe { tlf::receive_packet() };
@@ -136,4 +151,42 @@ pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>
         let bg = bg.as_ref().expect("called from wrong thread");
         f(bg)
     })
+}
+
+type BackgroundThread = (tlf::pthread_t, JoinHandle<()>);
+
+#[no_mangle]
+pub unsafe extern "C" fn spawn_background_thread(config: *mut c_void) -> *mut c_void {
+    let config: BackgroundConfig = *Box::from_raw(config as *mut BackgroundConfig);
+    let fg_id = tlf::pthread_self();
+
+    match std::thread::Builder::new()
+        .name("background".to_owned())
+        .spawn(|| background_process(config))
+    {
+        Ok(j) => {
+            let out: Box<BackgroundThread> = Box::new((fg_id, j));
+            Box::into_raw(out) as *mut c_void
+        }
+        Err(_) => {
+            tlf::perror(cstr!("pthread_create: backgound_process").as_ptr());
+            tlf::endwin();
+            std::process::exit(1);
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn join_background_thread(join_handle: *mut c_void) {
+    exit_background_process();
+
+    if join_handle == std::ptr::null_mut() {
+        return;
+    }
+    let (fg_id, join_handle): BackgroundThread =
+        *Box::from_raw(join_handle as *mut BackgroundThread);
+
+    if tlf::pthread_equal(tlf::pthread_self(), fg_id) != 0 {
+        join_handle.join().expect("background thread panicked");
+    }
 }
