@@ -180,7 +180,7 @@ pub unsafe extern "C" fn spawn_background_thread(config: *mut c_void) -> *mut c_
 pub unsafe extern "C" fn join_background_thread(join_handle: *mut c_void) {
     exit_background_process();
 
-    if join_handle == std::ptr::null_mut() {
+    if join_handle.is_null() {
         return;
     }
     let (fg_id, join_handle): BackgroundThread =
