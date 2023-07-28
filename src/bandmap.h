@@ -28,10 +28,11 @@ typedef struct {
     char 	*call;
     int 	freq;	/* freq in Hz */
     char 	mode;
-    short 	band;
+    short 	bandindex;
     char	node;
     unsigned int timeout;/* time (in seconds) left in bandmap */
-    char 	dupe;	/* only used internal in bm_show() */
+    bool 	dupe;	/* only used internally in bm_show() */
+    bool 	mult;	/* only used internally in bm_show() */
     int 	cqzone;	/* CQ zone */
     int 	ctynr;	/* Country nr */
     char 	*pfx; /* prefix */
@@ -42,12 +43,13 @@ typedef struct {
 #define SPOT_OLD	(SPOT_NEW * 2)  / 3
 
 typedef struct {
-    short allband;
-    short allmode;
-    short showdupes;
-    short skipdupes;
+    bool allband;
+    bool allmode;
+    bool showdupes;
+    bool skipdupes;
     short lifetime;
-    short onlymults;
+    bool onlymults;
+    bool show_out_of_band;
 } bm_config_t;
 
 extern bm_config_t bm_config;
@@ -120,7 +122,7 @@ void bandmap_show();
  *
  * maybe show own frequency as dashline in other color
  * (maybe green highlighted)
- * - highligth actual spot if near its frequency
+ * - highlight actual spot if near its frequency
  *
  * Allow selection of one of the spots (switches to S&P)
  * - Ctrl-G as known

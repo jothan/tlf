@@ -32,6 +32,7 @@
 
 #include "addspot.h"
 #include "audio.h"
+#include "bands.h"
 #include "change_rst.h"
 #include "cleanup.h"
 #include "globalvars.h"
@@ -55,6 +56,7 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "addmult.h"
+#include "plugin.h"
 #include "rust.h"
 
 #include "getexchange.h"
@@ -123,6 +125,8 @@ int getexchange(void) {
     if (CONTEST_IS(STEWPERRY)) {
 	recall_exchange();
     }
+
+    current_qso.band = bandindex2nr(bandinx); //FIXME drop global bandinx
 
     /* parse input and modify exchange field accordingly */
 
@@ -827,6 +831,11 @@ void checkexchange(struct qso_t *qso, bool interactive) {
     qso->callupdate[0] = 0;
     qso->normalized_comment[0] = 0;
     qso->mult1_value[0] = 0;
+
+    if (plugin_has_check_exchange()) {
+        plugin_check_exchange(qso);
+        return;
+    }
 
     // ----------------------------cqww------------------------------
     if (CONTEST_IS(CQWW)) {

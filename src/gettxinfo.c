@@ -25,6 +25,16 @@
 
 #include "tlf.h"
 #include "tlf_curses.h"
+#include "callinput.h"
+#include "bands.h"
+
+#include <hamlib/rig.h>
+
+#ifdef RIG_PASSBAND_NOCHANGE
+#define TLF_DEFAULT_PASSBAND RIG_PASSBAND_NOCHANGE
+#else
+#define TLF_DEFAULT_PASSBAND RIG_PASSBAND_NORMAL
+#endif
 
 void display_cw_speed(unsigned int wpm) {
     attron(COLOR_PAIR(C_HEADER) | A_STANDOUT);

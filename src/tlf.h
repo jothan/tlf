@@ -85,6 +85,7 @@ typedef enum {
 
 
 enum {
+    BANDINDEX_ANY = -1,
     BANDINDEX_160 = 0,
     BANDINDEX_80,
     BANDINDEX_60,
@@ -124,7 +125,7 @@ enum {
 #define ITU_ZONES 90
 #define MAX_ZONES (ITU_ZONES + 1) /* size of zones array */
 
-#define MAX_SECTION_LENGTH 4
+#define MAX_SECTION_LENGTH 5
 
 enum {
     MULT_NONE,      // multiplier not used
@@ -158,8 +159,8 @@ typedef struct {
     char continent[3];
     int cqzone;
     char qra[7];
-    double Lat;
-    double Long;
+    double Lat;     // +: north, -: south
+    double Long;    // +: west,  -: east
 } mystation_t;
 
 /** worked station

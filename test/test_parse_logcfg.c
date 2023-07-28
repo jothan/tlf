@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 
 #include "../src/audio.h"
+#include "../src/bands.h"
 #include "../src/parse_logcfg.h"
 #include "../src/lancode.h"
 #include "../src/bandmap.h"
@@ -28,12 +29,13 @@
 // OBJECT ../src/get_time.o
 // OBJECT ../src/getpx.o
 // OBJECT ../src/getwwv.o
-// OBJECT ../src/utils.o
 // OBJECT ../src/score.o
+// OBJECT ../src/plugin.o
+// OBJECT ../src/log_utils.o
+// OBJECT ../src/utils.o
 // OBJECT ../src/qrb.o
 // OBJECT ../src/setcontest.o
 // OBJECT ../src/cabrillo_utils.o
-// OBJECT ../src/log_utils.o
 
 // lancode.c
 int nodes = 0;
@@ -59,6 +61,7 @@ t_qtc_ry_line qtc_ry_lines[QTC_RY_LINE_NR];
 
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
+dxcc_data *dxcc_by_index(unsigned int index) { return NULL; }
 
 contest_config_t config_focm;
 
@@ -312,31 +315,31 @@ void test_keyer_device_too_long(void **state) {
 
 void test_vk_play_cmd(void **state) {
     int rc = call_parse_logcfg("VK_PLAY_COMMAND= sox -q $1 -d\n");
-    assert_int_equal(rc,0);
+    assert_int_equal(rc, 0);
     assert_string_equal(vk_play_cmd, "sox -q $1 -d");
 }
 
 void test_vk_record_cmd(void **state) {
     int rc = call_parse_logcfg("VK_RECORD_COMMAND= sox -r 8000 -q -d $1 &\n");
-    assert_int_equal(rc,0);
+    assert_int_equal(rc, 0);
     assert_string_equal(vk_record_cmd, "sox -r 8000 -q -d $1 &");
 }
 
 void test_soundlog_play_cmd(void **state) {
     int rc = call_parse_logcfg("SOUNDLOG_PLAY_COMMAND= sox -q $1 -d\n");
-    assert_int_equal(rc,0);
+    assert_int_equal(rc, 0);
     assert_string_equal(soundlog_play_cmd, "sox -q $1 -d");
 }
 
 void test_soundlog_record_cmd(void **state) {
     int rc = call_parse_logcfg("SOUNDLOG_RECORD_COMMAND= ./soundlog");
-    assert_int_equal(rc,0);
+    assert_int_equal(rc, 0);
     assert_string_equal(soundlog_record_cmd, "./soundlog");
 }
 
 void test_soundlog_directory(void **state) {
     int rc = call_parse_logcfg("SOUNDLOG_DIRECTORY= ~/soundlogs");
-    assert_int_equal(rc,0);
+    assert_int_equal(rc, 0);
     assert_string_equal(soundlog_dir, "~/soundlogs");
 }
 
@@ -382,7 +385,7 @@ void test_usepartials_wrong_arg(void **state) {
     int rc = call_parse_logcfg("USEPARTIALS=abc\n");
     assert_int_equal(rc, PARSE_ERROR);
     assert_string_equal(showmsg_spy,
-                       "Wrong parameter format for keyword 'USEPARTIALS'. See man page.\n");
+			"Wrong parameter format for keyword 'USEPARTIALS'. See man page.\n");
 
 }
 
@@ -963,7 +966,7 @@ void test_bandmap(void **state) {
     int rc = call_parse_logcfg("BANDMAP\n");
     assert_int_equal(rc, 0);
     assert_int_equal(cluster, MAP);
-    assert_int_equal(bm_config.showdupes, 1);
+    assert_true(bm_config.showdupes);
     assert_int_equal(bm_config.lifetime, 900);
 }
 
@@ -971,7 +974,7 @@ void test_bandmap_d100(void **state) {
     int rc = call_parse_logcfg("BANDMAP=D,100\n");
     assert_int_equal(rc, 0);
     assert_int_equal(cluster, MAP);
-    assert_int_equal(bm_config.showdupes, 0);
+    assert_false(bm_config.showdupes);
     assert_int_equal(bm_config.lifetime, 100);
 }
 
@@ -1458,4 +1461,13 @@ void test_digi_rig_mode_rttyr(void **state) {
     int rc = call_parse_logcfg("DIGI_RIG_MODE=RTTYR");
     assert_int_equal(rc, PARSE_OK);
     assert_int_equal(digi_mode, RIG_MODE_RTTYR);
+}
+
+void test_band40_ok(void **state) {
+    int rc = call_parse_logcfg("BAND_40=7000k,7040k,7050k,7200k");
+    assert_int_equal(rc, PARSE_OK);
+    assert_int_equal(bandcorner[3][0], 7000 * 1000);
+    assert_int_equal(bandcorner[3][1], 7200 * 1000);
+    assert_int_equal(cwcorner[3], 7040 * 1000);
+    assert_int_equal(ssbcorner[3], 7050 * 1000);
 }

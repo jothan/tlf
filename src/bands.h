@@ -35,9 +35,9 @@
 #define BAND_DOWN    -1
 
 extern int inxes[NBANDS];  /**< conversion from BANDINDEX to BAND-mask */
-extern const unsigned int bandcorner[NBANDS][2];
-extern const unsigned int cwcorner[NBANDS];
-extern const unsigned int ssbcorner[NBANDS];
+extern unsigned int bandcorner[NBANDS][2];
+extern unsigned int cwcorner[NBANDS];
+extern unsigned int ssbcorner[NBANDS];
 
 /** \brief converts bandnumber to bandindex
  *
@@ -64,7 +64,7 @@ void next_band(int direction);
  *
  * \return	bandindex or BANDINDEX_OOB if not in any band
  */
-int freq2band(unsigned int freq);
+int freq2bandindex(unsigned int freq);
 
 /** \brief convert band to frequency in Hz
  *
