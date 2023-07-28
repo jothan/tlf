@@ -999,7 +999,7 @@ int packet() {
     while (1) {
 	wrefresh(entwin);
 
-	while ((c = wgetch(entwin)) == -1) {
+	while ((c = wgetch_process(entwin)) == -1) {
 
 	    if (packetinterface == TELNET_INTERFACE) {
 

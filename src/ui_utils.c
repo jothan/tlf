@@ -147,7 +147,6 @@ static int getkey(int wait) {
 
     nodelay(stdscr, wait ? FALSE : TRUE);
 
-    process_foreground_work();
     x = onechar();
 
     if (x == KEY_RESIZE) {
@@ -169,7 +168,7 @@ static int onechar(void) {
     int x = 0;
     int trash = 0;
 
-    x = getch();
+    x = getch_process();
 
     /* Replace Ctl-H (Backspace) and Delete with KEY_BACKSPACE */
     if (x == CTRL_H || x == DELETE)
@@ -178,7 +177,7 @@ static int onechar(void) {
     if (x == ESCAPE) {
 	nodelay(stdscr, TRUE);
 
-	x = getch();
+	x = getch_process();
 
 	/* Escape pressed, not an escaped key. */
 	if (x == ERR) {
@@ -204,7 +203,7 @@ static int onechar(void) {
 		    break;
 
 		case 79: {
-		    x = getch();
+		    x = getch_process();
 
 		    /* Catch Alt-O */
 		    if (x == ERR) {
@@ -214,12 +213,12 @@ static int onechar(void) {
 
 		    /* Key codes for Shift-F1 to Shift-F4 in Xfce terminal. */
 		    if (x == 49) {
-			x = getch();
+			x = getch_process();
 
 			if (x == 59) {
-			    x = getch();
+			    x = getch_process();
 			    if (x == 50) {
-				x = getch();
+				x = getch_process();
 
 				switch (x) {
 
@@ -254,7 +253,7 @@ static int onechar(void) {
 	} else {
 	    nodelay(stdscr, FALSE);
 
-	    x = getch();        /* Get next code after 91 */
+	    x = getch_process();        /* Get next code after 91 */
 
 	    switch (x) {
 
@@ -263,7 +262,7 @@ static int onechar(void) {
 		 * 27 91 52 126 End
 		 */
 		case 49: {
-		    x = getch();
+		    x = getch_process();
 
 		    if (x == 126) {
 			x = KEY_HOME;
@@ -273,7 +272,7 @@ static int onechar(void) {
 
 		case 52: {
 		    x = KEY_END;
-		    trash = getch();
+		    trash = getch_process();
 		    break;
 		}
 	    }
@@ -286,7 +285,7 @@ static int onechar(void) {
     if (x == 194) {
 	nodelay(stdscr, TRUE);
 
-	trash = getch();
+	trash = getch_process();
 
 	if (trash == ERR)
 	    return x;
@@ -308,7 +307,7 @@ static int onechar(void) {
     if (x == 195) {
 	nodelay(stdscr, TRUE);
 
-	trash = getch();
+	trash = getch_process();
 
 	if (trash == ERR)
 	    return x;

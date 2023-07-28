@@ -137,22 +137,14 @@ unsafe fn keyer_init(rig: &Option<Rig>) -> Arc<Option<Netkeyer>> {
     netkeyer
 }
 
-#[no_mangle]
-pub extern "C" fn process_foreground_work() {
-    FOREGROUND_WORKER.with(|fg| {
-        if let Some(ref fg) = *fg.borrow() {
-            fg.process_pending(&mut ())
-                .expect("fg worker receive problem");
-        }
-    })
-}
-
 #[inline]
 fn fg_sleep_inner(delay: Duration) {
     FOREGROUND_WORKER.with(|fg| {
         if let Some(ref fg) = *fg.borrow() {
             fg.process_sleep(&mut (), delay)
                 .expect("fg worker receive problem");
+        } else {
+            panic!("no fg worker to sleep");
         }
     })
 }
@@ -165,6 +157,40 @@ pub extern "C" fn fg_usleep(micros: c_ulong) {
 #[no_mangle]
 pub extern "C" fn fg_sleep(secs: c_uint) {
     fg_sleep_inner(Duration::from_secs(secs.into()))
+}
+
+#[no_mangle]
+pub extern "C" fn getch_process() -> c_int {
+    FOREGROUND_WORKER.with(|fg| {
+        let fg = fg.borrow();
+        let fg = fg.as_ref().unwrap();
+        let (c, err) = fg.process_blocking(&mut (), || unsafe { tlf::getch() });
+
+        if let Some(err) = err {
+            panic!("Recv error: {:?}", err);
+        }
+        c
+    })
+}
+#[no_mangle]
+pub extern "C" fn wgetch_process(w: *mut tlf::WINDOW) -> c_int {
+    struct AssertSend(*mut tlf::WINDOW);
+    unsafe impl Send for AssertSend {}
+    let w = AssertSend(w);
+
+    FOREGROUND_WORKER.with(|fg| {
+        let fg = fg.borrow();
+        let fg = fg.as_ref().unwrap();
+        let (c, err) = fg.process_blocking(&mut (), || unsafe {
+            let w = w;
+            tlf::wgetch(w.0)
+        });
+
+        if let Some(err) = err {
+            panic!("Recv error: {:?}", err);
+        }
+        c
+    })
 }
 
 pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
