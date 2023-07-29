@@ -1,9 +1,9 @@
-use std::time::{Duration, Instant};
-
-use crossbeam::{
-    channel::{bounded, Receiver, RecvError, RecvTimeoutError, Sender},
-    select,
+use std::{
+    ops::ControlFlow,
+    time::{Duration, Instant},
 };
+
+use flume::{bounded, Receiver, RecvError, RecvTimeoutError, Selector, Sender};
 use oneshot;
 
 type WorkItem<C> = Box<dyn FnOnce(&mut C) + Send + 'static>;
@@ -95,35 +95,34 @@ impl<C: ?Sized> Worker<C> {
     pub(crate) fn process_blocking<B: FnOnce() -> R + Send, R: Send>(
         &self,
         context: &mut C,
-        block: B,
+        blocking_op: B,
     ) -> (R, Option<RecvError>) {
         let (done_s, done_r) = bounded::<()>(1);
 
-        // FIXME: avoid spawning a thread here each time.
-        std::thread::scope(|s| {
-            let worker = s.spawn(|| {
-                let res = block();
+        let mut block_res = None;
+        let mut recv_error = Ok(());
+
+        rayon::in_place_scope(|s| {
+            s.spawn(|_| {
+                block_res = Some(blocking_op());
                 done_s.send(()).unwrap();
-                res
             });
 
-            let recv_error = loop {
-                select! {
-                    recv(self.handle) -> work => {
-                        match work {
-                            Ok(work) => work(context),
-                            Err(e) => break(Err(e)),
-                        }}
-                    recv(done_r) -> done => {
-                        break(done)
-                    }
+            recv_error = loop {
+                let res = Selector::new()
+                    .recv(&self.handle, |work| match work.map(|work| work(context)) {
+                        Ok(_) => ControlFlow::Continue(()),
+                        Err(e) => ControlFlow::Break(Err(e)),
+                    })
+                    .recv(&done_r, ControlFlow::Break)
+                    .wait();
+
+                if let ControlFlow::Break(e) = res {
+                    break e;
                 }
             };
-
-            let res = worker.join().expect("join error");
-
-            (res, recv_error.err())
-        })
+        });
+        (block_res.unwrap(), recv_error.err())
     }
 }
 

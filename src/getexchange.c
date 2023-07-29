@@ -149,9 +149,6 @@ int getexchange(void) {
 	/* main loop waiting for input */
 	x = -1;
 	while (x < 1) {
-
-	    fg_usleep(10000);
-
 	    time_update();
 
 	    if (trxmode == DIGIMODE) {
@@ -161,7 +158,7 @@ int getexchange(void) {
 	    /* make sure that the wrefresh() inside getch() shows the cursor
 	     * in the input field */
 	    wmove(stdscr, 12, 54 + strlen(current_qso.comment));
-	    x = key_poll();
+	    x = key_wait(10);
 	}
 
 	switch (x) {

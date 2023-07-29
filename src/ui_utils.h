@@ -35,7 +35,7 @@ void lookup_keys();
 #define ALT(c) (c + 128)
 
 int key_get();
-int key_poll();
+int key_wait(int timeout);
 void resize_layout();
 
 const char *spaces(int);

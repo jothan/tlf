@@ -445,14 +445,11 @@ void qtc_main_panel(int direction) {
     while (x != ESCAPE) {
 
 	while (x < 1) {
-
-	    fg_usleep(5000);
 	    time_update();
 	    if (trxmode == DIGIMODE && digikeyer != NO_KEYER) {
 		show_rtty();
 	    }
-	    x = key_poll();
-
+	    x = key_wait(5);
 	}
 
 	switch (x) {
@@ -1727,8 +1724,6 @@ void show_rtty_lines() {
     while (x != ESCAPE) {
 
 	while (x < 1) {
-
-	    fg_usleep(1000);
 	    time_update();
 
 	    if (miniterm == 1 && trxmode == DIGIMODE && digikeyer != NO_KEYER) {
@@ -1759,7 +1754,7 @@ void show_rtty_lines() {
 	    mvwprintw(ry_win, qtc_ry_currline + 1, 1, "%-38s", currline);
 
 	    refreshp();
-	    x = key_poll();
+	    x = key_wait(1);
 	}
 
 	switch (x) {

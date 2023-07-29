@@ -131,7 +131,7 @@ void record(void) {
 
     while (run) {
 
-	key = key_poll();
+	key = key_wait(10);
 
 	/* Look for F1-F12, s|S, c|C, 1-4 */
 	switch (key) {

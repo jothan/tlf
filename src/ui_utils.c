@@ -129,11 +129,11 @@ int key_get() {
     return getkey(1);
 }
 
-/** key_poll return next key from terminal if there is one
- *
- */
-int key_poll() {
-    return getkey(0);
+int key_wait(int timeout) {
+    timeout(timeout);
+    int c = key_get();
+    timeout(-1);
+    return c;
 }
 
 
@@ -145,7 +145,9 @@ int key_poll() {
 static int getkey(int wait) {
     int x = 0;
 
-    nodelay(stdscr, wait ? FALSE : TRUE);
+    if(!wait) {
+        nodelay(stdscr, TRUE);
+    }
 
     x = onechar();
 
@@ -177,7 +179,7 @@ static int onechar(void) {
     if (x == ESCAPE) {
 	nodelay(stdscr, TRUE);
 
-	x = getch_process();
+	x = getch();
 
 	/* Escape pressed, not an escaped key. */
 	if (x == ERR) {
@@ -203,7 +205,7 @@ static int onechar(void) {
 		    break;
 
 		case 79: {
-		    x = getch_process();
+		    x = getch();
 
 		    /* Catch Alt-O */
 		    if (x == ERR) {
@@ -213,12 +215,12 @@ static int onechar(void) {
 
 		    /* Key codes for Shift-F1 to Shift-F4 in Xfce terminal. */
 		    if (x == 49) {
-			x = getch_process();
+			x = getch();
 
 			if (x == 59) {
-			    x = getch_process();
+			    x = getch();
 			    if (x == 50) {
-				x = getch_process();
+				x = getch();
 
 				switch (x) {
 
@@ -262,7 +264,7 @@ static int onechar(void) {
 		 * 27 91 52 126 End
 		 */
 		case 49: {
-		    x = getch_process();
+		    x = getch();
 
 		    if (x == 126) {
 			x = KEY_HOME;
@@ -272,7 +274,7 @@ static int onechar(void) {
 
 		case 52: {
 		    x = KEY_END;
-		    trash = getch_process();
+		    trash = getch();
 		    break;
 		}
 	    }
@@ -285,7 +287,7 @@ static int onechar(void) {
     if (x == 194) {
 	nodelay(stdscr, TRUE);
 
-	trash = getch_process();
+	trash = getch();
 
 	if (trash == ERR)
 	    return x;
@@ -307,7 +309,7 @@ static int onechar(void) {
     if (x == 195) {
 	nodelay(stdscr, TRUE);
 
-	trash = getch_process();
+	trash = getch();
 
 	if (trash == ERR)
 	    return x;

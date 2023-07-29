@@ -38,10 +38,10 @@ void change_freq(void) {
     curs_set(0);
 
     while (1) {
-
+        time_update();
 	freq_display();
 
-        int x = key_poll();
+        int x = key_wait(100);
 
         int deltaf = 0;
 
@@ -103,14 +103,6 @@ void change_freq(void) {
 	if (brkflg) {
 	    break;
 	}
-
-
-	time_update();
-
-	freq_display();
-
-	fg_usleep(100 * 1000);
-
     }
     curs_set(1);
 }

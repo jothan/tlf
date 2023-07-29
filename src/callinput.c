@@ -104,8 +104,7 @@ void tune() {
 
 	count = count * 4;    // sleeping 1/4 second units between keypress-checks
 	while (count > 0) {
-	    fg_usleep(250000);
-	    if (key_poll() != -1) {	// any key pressed ?
+	    if (key_wait(250) != -1) {	// any key pressed ?
 		count2 = 0;    // destroy outer loop as well
 		break;
 	    }
@@ -160,9 +159,6 @@ int callinput(void) {
 	/* main loop waiting for input */
 	x = -1;
 	while (x < 1) {
-
-	    fg_usleep(10000);
-
 	    time_update();
 
 	    if (trxmode == DIGIMODE) {
@@ -224,8 +220,7 @@ int callinput(void) {
 	    /* make sure that the wrefresh() inside getch() shows the cursor
 	     * in the input field */
 	    wmove(stdscr, 12, 29 + strlen(current_qso.call));
-	    x = key_poll();
-
+            x = key_wait(100);
 	}
 
 	/* special handling of some keycodes if call field is empty */
@@ -1112,8 +1107,6 @@ int autosend() {
 
 	    highlightCall(char_sent + 1);
 
-	    fg_usleep(10000);
-
 	    if (g_timer_elapsed(timer, NULL) > timeout_sent) {
 		/* one char sent - display and set new timeout */
 		char_sent ++;
@@ -1125,7 +1118,7 @@ int autosend() {
 	    /* make sure that the wrefresh() inside getch() shows the cursor
 	     * in the input field */
 	    wmove(stdscr, 12, 29 + strlen(current_qso.call));
-	    x = key_poll();
+	    x = key_wait(10);
 
 	}
 
@@ -1246,6 +1239,7 @@ void handle_bandswitch(int direction) {
     }
 
     send_bandswitch(bandfrequency[bandinx]);
+    showscore();
 }
 
 /** handle TRX memory operation and update screen
