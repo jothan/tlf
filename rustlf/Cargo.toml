@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type=["staticlib"]
+crate-type=["staticlib", "lib"]
 
 [profile.release]
 panic = "abort"
@@ -23,6 +23,9 @@ libc = "0.2"
 cstr = "0.2"
 flume="0.10"
 rayon="1.7"
+nom="7.1"
+linereader="0.4"
+fxhash="0.2"
 
 [build-dependencies]
 cbindgen = "0.24.3"
