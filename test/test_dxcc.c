@@ -1,12 +1,25 @@
 #include "test.h"
 
 #include "../src/tlf.h"
-#include "../src/dxcc.h"
+#include "../src/rust.h"
 
-
-// OBJECT ../src/dxcc.o
 
 extern prefix_data dummy_pfx;
+
+const unsigned int bandcorner[NBANDS][2] = {
+    { 1800000, 2000000 },	// band bottom, band top
+    { 3500000, 4000000 },
+    { 5250000, 5450000 },       // 5351500-5356500 worldwide
+    { 7000000, 7300000 },
+    { 10100000, 10150000 },
+    { 14000000, 14350000 },
+    { 18068000, 18168000 },
+    { 21000000, 21450000 },
+    { 24890000, 24990000 },
+    { 28000000, 29700000 },
+    {        0,        0 }
+};
+
 
 int setup_default(void **state) {
     dxcc_init();
@@ -28,7 +41,7 @@ void test_prefix_empty_after_init(void **state) {
 }
 
 void test_prefix_by_index_out_of_bounds(void **state) {
-    assert_ptr_equal(&dummy_pfx, prefix_by_index(dxcc_count()));
+    assert_ptr_equal(dummy_prefix(), prefix_by_index(dxcc_count()));
 }
 
 void test_dxcc_by_index_out_of_bounds(void **state) {
@@ -40,7 +53,7 @@ void test_add_dxcc_check_count(void **state) {
 }
 
 void test_add_dxcc_check_parsed(void **state) {
-    dxcc_data *mydx;
+    const dxcc_data *mydx;
     mydx = dxcc_by_index(1);
     assert_string_equal(mydx->countryname, "France");
     assert_int_equal(mydx->cq, 14);
@@ -54,25 +67,25 @@ void test_add_dxcc_check_parsed(void **state) {
 }
 
 void test_add_dxcc_check_starred(void **state) {
-    dxcc_data *mydx;
+    const dxcc_data *mydx;
     dxcc_add("France:                   14:  27:  EU:   46.00:    -2.00:    -1.0:  *F:");
     mydx = dxcc_by_index(2);
     assert_true(mydx->starred);
 }
 
 void test_add_prefix_check_count(void **state) {
-    prefix_add("F");
-    prefix_add("HW");
+    prefix_add("F,");
+    prefix_add("HW;");
     assert_int_equal(2, prefix_count());
 }
 
 void test_add_prefix_check_defaults(void **state) {
-    prefix_data *pfx;
-    prefix_add("HW");
+    const prefix_data *pfx;
+    prefix_add("HW;");
     pfx = prefix_by_index(0);
     assert_string_equal(pfx->pfx, "HW");
     assert_int_equal(pfx->dxcc_ctynr, dxcc_count() - 1);
-    dxcc_data *mydx = dxcc_by_index(dxcc_count() - 1);
+    const dxcc_data *mydx = dxcc_by_index(dxcc_count() - 1);
     assert_int_equal(pfx->cq, mydx->cq);
     assert_int_equal(pfx->itu, mydx->itu);
     assert_string_equal(pfx->continent, mydx->continent);
@@ -82,9 +95,9 @@ void test_add_prefix_check_defaults(void **state) {
 }
 
 void test_add_prefix_check_overrides(void **state) {
-    prefix_data *pfx;
+    const prefix_data *pfx;
     // NOTE: overrides must be in the order below
-    char *input = g_strdup("HW(11)[22]<33.3/44.4>{OC}~5.5~");
+    char *input = g_strdup("HW(11)[22]<33.3/44.4>{OC}~5.5~;");
     prefix_add(input);
     g_free(input);
     pfx = prefix_by_index(0);

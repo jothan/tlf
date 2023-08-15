@@ -35,7 +35,6 @@
 #include "cqww_simulator.h"
 #include "changepars.h"
 #include "clear_display.h"
-#include "dxcc.h"
 #include "editlog.h"
 #include "err_utils.h"
 #include "fldigixmlrpc.h"
@@ -696,7 +695,7 @@ void networkinfo(void) {
     mvprintw(13 + nodes, 10, "callmaster : %s",
 	     (callmaster_version[0] != 0 ? callmaster_version : "n/a"));
     mvprintw(14 + nodes, 10, "cty.dat    : %s",
-	     (cty_dat_version[0] != 0 ? cty_dat_version : "n/a"));
+	     (cty_dat_version()[0] != 0 ? cty_dat_version() : "n/a"));
 
     refreshp();
 

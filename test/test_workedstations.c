@@ -2,18 +2,17 @@
 
 #include <time.h>
 
-#include "../src/dxcc.h"
 #include "../src/searchcallarray.h"
 #include "../src/bands.h"
 #include "../src/globalvars.h"
+#include "../src/rust.h"
 
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/searchcallarray.o
 // OBJECT ../src/bands.o
 
 prefix_data pfx_dummy = { };
 
-prefix_data *getctyinfo(char * call) {
+const prefix_data *getctyinfo(char * call) {
     return &pfx_dummy;
 }
 

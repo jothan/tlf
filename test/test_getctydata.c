@@ -2,16 +2,15 @@
 #include "test.h"
 
 #include "../src/tlf.h"
-#include "../src/dxcc.h"
 #include "../src/readctydata.h"
 #include "../src/globalvars.h"
 #include "../src/setcontest.h"
 
 #include "../src/getctydata.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/getctydata.o
 // OBJECT ../src/getpx.o
 // OBJECT ../src/setcontest.o
@@ -24,8 +23,6 @@
 /* export internal function */
 int location_unknown(char *call);
 int getpfxindex(char *checkcallptr, char **normalized_call);
-int find_full_match(const char *call);
-int find_best_match(const char *call);
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
 
@@ -46,7 +43,7 @@ int setup_default(void **state) {
 }
 
 char *best_prefix(char *call) {
-    prefix_data *pfx;
+    const prefix_data *pfx;
     int index;
 
     index = find_best_match(call);
@@ -58,7 +55,7 @@ char *best_prefix(char *call) {
 }
 
 char *full_prefix(char *call) {
-    prefix_data *pfx;
+    const prefix_data *pfx;
     int index;
 
     index = find_full_match(call);

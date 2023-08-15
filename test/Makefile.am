@@ -8,7 +8,7 @@ LIBS = @LIBM_LIB@ @PTHREAD_LIBS@ @GLIB_LIBS@ @HAMLIB_LIBS@ \
        @PYTHON_LIBS@ \
         -Wl,-wrap=sleep \
         -Wl,-wrap=key_get \
-        -Wl,-wrap=key_poll \
+        -Wl,-wrap=key_wait \
         -Wl,-wrap=sendto \
         -Wl,-wrap=wgetch \
         -Wl,-wrap=refreshp

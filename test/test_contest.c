@@ -1,13 +1,12 @@
 #include "test.h"
 
-#include "../src/dxcc.h"
 #include "../src/globalvars.h"
 #include "../src/setcontest.h"
+#include "../src/rust.h"
 
 
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/getpx.o
 // OBJECT ../src/setcontest.o
 // OBJECT ../src/score.o
@@ -25,7 +24,7 @@ int getctydata(char *checkcall) {
     return 0;
 }
 
-prefix_data *getctyinfo(char * call) {
+const prefix_data *getctyinfo(char * call) {
     return NULL;
 }
 

@@ -2,18 +2,17 @@
 
 #include "../src/addcall.h"
 #include "../src/bands.h"
-#include "../src/dxcc.h"
 #include "../src/getctydata.h"
 #include "../src/globalvars.h"
 #include "../src/log_utils.h"
 #include "../src/searchcallarray.h"
 #include "../src/score.h"
 #include "../src/setcontest.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/addcall.o
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/focm.o
 // OBJECT ../src/getctydata.o
 // OBJECT ../src/getpx.o

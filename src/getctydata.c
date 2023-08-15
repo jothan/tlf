@@ -28,10 +28,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "dxcc.h"
 #include "getpx.h"
 #include "globalvars.h"		// Includes glib.h and tlf.h
 #include "setcontest.h"
+#include "rust.h"
 
 /* check for calls which have no assigned country and no assigned zone,
  * e.g. airborn mobile /AM or maritime mobile /MM
@@ -158,7 +158,7 @@ int getpfxindex(char *checkcallptr, char **normalized_call) {
 }
 
 /* lookup dxcc country and prefix information from callsign */
-prefix_data *getctyinfo(char *call) {
+const prefix_data *getctyinfo(char *call) {
     int w = getpfxindex(call, NULL);
     return prefix_by_index(w);
 }
@@ -192,7 +192,7 @@ static int getctydata_internal(char *call, bool get_country) {
     free(normalized_call);
 
     // fill global variables
-    prefix_data *pfx = prefix_by_index(w);
+    const prefix_data *pfx = prefix_by_index(w);
     countrynr = pfx->dxcc_ctynr;
     sprintf(cqzone, "%02d", pfx->cq);
     sprintf(ituzone, "%02d", pfx->itu);

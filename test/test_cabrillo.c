@@ -1,7 +1,6 @@
 #include "test.h"
 
 #include "../src/cabrillo_utils.h"
-#include "../src/dxcc.h"
 #include "../src/readcabrillo.h"
 #include "../src/cqww_simulator.h"
 #include "../src/log_utils.h"
@@ -65,7 +64,7 @@ int getctynr(char *call) {
     return 42;
 }
 
-prefix_data *getctyinfo(char *call) {
+const prefix_data *getctyinfo(char *call) {
     return NULL;
 }
 

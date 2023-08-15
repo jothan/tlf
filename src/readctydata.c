@@ -30,10 +30,10 @@
 
 #include <glib.h>
 
-#include "dxcc.h"
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "utils.h"
+#include "rust.h"
 
 
 void readctydata(void) {

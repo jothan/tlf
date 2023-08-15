@@ -34,6 +34,6 @@ void score_qso(struct qso_t *qso);
 int score2(char *line);
 bool country_found(char prefix[]);
 bool is_in_countrylist(int countrynr);
-bool is_in_continentlist(char *continent);
+bool is_in_continentlist(const char *continent);
 
 #endif /* end of include guard: _SCORE_H */

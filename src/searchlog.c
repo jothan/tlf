@@ -33,7 +33,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "dxcc.h"
 #include "err_utils.h"
 #include "getctydata.h"
 #include "getpx.h"
@@ -54,6 +53,7 @@
 #include "get_time.h"
 #include "addmult.h"
 #include "utils.h"
+#include "rust.h"
 
 #define CALLMASTER_DEFAULT "callmaster"
 #define CALLMASTER_SIZE 16000       // initial allocation size
@@ -139,7 +139,7 @@ void drawSearchWin(void) {
     }
 }
 
-void displayCallInfo(dxcc_data *dx, char *pxstr) {
+void displayCallInfo(const dxcc_data *dx, char *pxstr) {
 
     wattroff(search_win, A_STANDOUT);
     wattron(search_win, COLOR_PAIR(C_BORDER));
@@ -681,7 +681,7 @@ void displayWorkedZonesCountries(int z) {
 
 void searchlog() {
 
-    dxcc_data *dx;
+    const dxcc_data *dx;
     int zone;
 
     if (!initialized) {

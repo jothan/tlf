@@ -40,7 +40,6 @@
 #include "addmult.h"
 #include "addpfx.h"
 #include "bands.h"
-#include "dxcc.h"
 #include "getctydata.h"
 #include "getpx.h"
 #include "get_time.h"
@@ -52,7 +51,7 @@
 #include "setcontest.h"
 #include "tlf.h"
 #include "zone_nr.h"
-
+#include "rust.h"
 
 /* collect all relevant data for the actual QSO into a new qso_t structure */
 //TODO rename this function to duplicate_current_qso()

@@ -22,7 +22,6 @@
  *
  *--------------------------------------------------------------*/
 
-#include "dxcc.h"
 #include "getwwv.h"
 #include "get_time.h"
 #include "getctydata.h"
@@ -32,6 +31,7 @@
 #include "tlf.h"
 #include "tlf_curses.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #define LINELENGTH 80
 
@@ -50,8 +50,8 @@ static void showinfo_internal(int pfx_index) {
     double range;
     char timebuff[80];
 
-    prefix_data *pfx = prefix_by_index(pfx_index);
-    dxcc_data *dx = dxcc_by_index(pfx -> dxcc_ctynr);
+    const prefix_data *pfx = prefix_by_index(pfx_index);
+    const dxcc_data *dx = dxcc_by_index(pfx -> dxcc_ctynr);
 
     getyx(stdscr, cury, curx);
     attron(COLOR_PAIR(C_HEADER) | A_STANDOUT);

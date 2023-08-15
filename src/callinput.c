@@ -68,6 +68,7 @@
 #include "show_help.h"
 #include "showinfo.h"
 #include "showpxmap.h"
+#include "showscore.h"
 #include "speedupndown.h"
 #include "splitscreen.h"
 #include "stoptx.h"

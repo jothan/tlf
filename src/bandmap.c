@@ -35,11 +35,11 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "getctydata.h"
-#include "dxcc.h"
 #include "initial_exchange.h"
 #include "bands.h"
 #include "lancode.h"
 #include "grabspot.h"
+#include "rust.h"
 
 #define TOLERANCE 100 		/* spots with a QRG +/-TOLERANCE
 				   will be counted as the same QRG */
@@ -301,7 +301,7 @@ void bandmap_addspot(char *call, freq_t freq, char node) {
     GList *found;
     int bandindex;
     char mode;
-    dxcc_data *dxccdata;
+    const dxcc_data *dxccdata;
     int dxccindex;
     int wi;
     char *lastexch;

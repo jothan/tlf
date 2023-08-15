@@ -3,16 +3,15 @@
 #include "../src/tlf.h"
 #include "../src/addmult.h"
 #include "../src/addcall.h"
-#include "../src/dxcc.h"
 #include "../src/globalvars.h"
 #include "../src/bands.h"
 #include "../src/setcontest.h"
 #include "../src/log_utils.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/addmult.o
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/getpx.o
 // OBJECT ../src/plugin.o
 // OBJECT ../src/qrb.o
@@ -35,7 +34,7 @@ int getctydata(char *checkcall) {
     return 0;
 }
 
-prefix_data *getctyinfo(char *call) {
+const prefix_data *getctyinfo(char *call) {
     return NULL;
 }
 

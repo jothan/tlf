@@ -21,7 +21,6 @@
 #include <glib.h>
 
 #include "clear_display.h"
-#include "dxcc.h"
 #include "focm.h"
 #include "getctydata.h"
 #include "globalvars.h"
@@ -30,6 +29,7 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "bands.h"
+#include "rust.h"
 
 bool no_multi() {
     return false;
@@ -155,7 +155,7 @@ static int get_nr_cntry() {
 static int get_nr_cont() {
 
     GHashTable *cont;
-    dxcc_data *data;
+    const dxcc_data *data;
     int nr, i;
 
     cont = g_hash_table_new(g_str_hash, g_str_equal);
@@ -163,7 +163,7 @@ static int get_nr_cont() {
     for (i = 0; i < nr_worked; i++) {
 	data = dxcc_by_index(worked[i].ctyinfo->dxcc_ctynr);
 
-	g_hash_table_replace(cont, data->continent, data->continent);
+	g_hash_table_replace(cont, (void*)data->continent, (void*)data->continent);
     }
 
     nr = g_hash_table_size(cont);

@@ -22,15 +22,15 @@
 
 #include <hamlib/rotator.h>
 
-#include "dxcc.h"
 #include "getctydata.h"
 #include "globalvars.h"
 #include "startmsg.h"
+#include "rust.h"
 
 
 /* get countrynumber, QTH, CQ zone and continent for myself */
 void getstationinfo() {
-    dxcc_data *mydx;
+    const dxcc_data *mydx;
 
     my.countrynr = getctydata(my.call);        /* whoami? */
 

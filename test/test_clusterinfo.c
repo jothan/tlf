@@ -5,7 +5,7 @@
 #include "../src/globalvars.h"
 #include "../src/bandmap.h"
 #include "../src/lancode.h"
-#include "../src/dxcc.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/clusterinfo.o
 // OBJECT ../src/bands.o
@@ -48,22 +48,6 @@ void printcall() {
 
 int modify_attr(int attr) {
     return attr;
-}
-
-static dxcc_data dummy_dxcc = {
-    "Noland",
-    1,
-    2,
-    "NO",
-    34,
-    56,
-    7,
-    "QQ",
-    false
-};
-
-dxcc_data *dxcc_by_index(unsigned int index) {
-    return &dummy_dxcc;
 }
 
 /* setup/teardown */

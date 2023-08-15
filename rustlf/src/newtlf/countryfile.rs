@@ -1,16 +1,34 @@
 use cstr::cstr;
 use fxhash::FxHashMap;
+use nom::combinator::all_consuming;
 use std::{
     ffi::{CStr, CString},
+    fmt::Debug,
     io::Read,
+    sync::OnceLock,
 };
+
+use crate::ffi::{CStringPtr, StaticCStrPtr};
 
 use self::parser::{parse_reader, CountryLine, Line};
 
+pub mod ffi;
 pub mod parser;
 
 const MAX_LINE_LENGTH: usize = 256;
 const VERSION_LENGTH: usize = 12;
+static DUMMY_COUNTRY: OnceLock<Country> = OnceLock::new();
+static DUMMY_PREFIX: OnceLock<Prefix> = OnceLock::new();
+
+#[no_mangle]
+pub extern "C" fn dummy_country() -> &'static Country {
+    DUMMY_COUNTRY.get_or_init(Country::dummy)
+}
+
+#[no_mangle]
+pub extern "C" fn dummy_prefix() -> &'static Prefix {
+    DUMMY_PREFIX.get_or_init(Prefix::dummy)
+}
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
@@ -32,16 +50,17 @@ impl From<ItuZone> for u8 {
     }
 }
 
+/// cbindgen:field-names=[pfx, cq, itu, dxcc_ctynr, lat, lon, continent, timezone, exact]
 #[repr(C)]
 #[derive(Debug)]
 pub struct Prefix {
-    pub prefix: CString,
+    pub prefix: CStringPtr,
     pub cq_zone: CqZone,
     pub itu_zone: ItuZone,
     pub country_idx: usize, /* cty number is index in dxcc table */
     pub lat: f32,
     pub lon: f32,
-    pub continent: &'static CStr,
+    pub continent: StaticCStrPtr,
     pub timezone: f32,
     pub exact: bool,
 }
@@ -51,7 +70,7 @@ impl Prefix {
         let o = &prefix.override_;
         let coords = o.coordinates.unwrap_or((country.lat, country.lon));
         Prefix {
-            prefix: CString::new(prefix.prefix).unwrap(),
+            prefix: CString::new(prefix.prefix).unwrap().into(),
             cq_zone: o.cq_zone.unwrap_or(country.cq_zone),
             itu_zone: o.itu_zone.unwrap_or(country.itu_zone),
             country_idx,
@@ -60,36 +79,51 @@ impl Prefix {
             continent: o
                 .continent
                 .as_ref()
-                .map(|c| c.as_cstr())
+                .map(|c| c.as_cstr().into())
                 .unwrap_or(country.continent),
             timezone: o.timezone.unwrap_or(country.timezone),
             exact: prefix.exact,
         }
     }
+
+    fn dummy() -> Self {
+        Prefix {
+            prefix: CString::new("No Prefix").unwrap().into(),
+            cq_zone: CqZone(0),
+            itu_zone: ItuZone(0),
+            country_idx: 0,
+            lat: f32::INFINITY,
+            lon: f32::INFINITY,
+            continent: cstr!("").into(),
+            timezone: f32::INFINITY,
+            exact: false,
+        }
+    }
 }
 
+/// cbindgen:field-names=[countryname, cq, itu, continent, lat, lon, timezone, pfx, starred]
 #[repr(C)]
 #[derive(Debug)]
 pub struct Country {
-    pub main_prefix: CString,
-    pub name: CString,
+    pub name: CStringPtr,
     pub cq_zone: CqZone,
     pub itu_zone: ItuZone,
-    pub continent: &'static CStr,
+    pub continent: StaticCStrPtr,
     pub lat: f32,
     pub lon: f32,
     pub timezone: f32,
+    pub main_prefix: CStringPtr,
     pub starred: bool,
 }
 
-impl Default for Country {
-    fn default() -> Self {
+impl Country {
+    fn dummy() -> Self {
         Country {
-            name: CString::new("Not Specified").unwrap(),
-            main_prefix: CString::new("").unwrap(),
+            name: CString::new("Not Specified").unwrap().into(),
+            main_prefix: CString::new("").unwrap().into(),
             cq_zone: CqZone(0),
             itu_zone: ItuZone(0),
-            continent: cstr!("--"),
+            continent: cstr!("--").into(),
             lat: 0.0,
             lon: 0.0,
             timezone: 0.0,
@@ -101,11 +135,11 @@ impl Default for Country {
 impl From<&CountryLine<'_>> for Country {
     fn from(value: &CountryLine<'_>) -> Self {
         Country {
-            name: CString::new(value.name).unwrap(),
-            main_prefix: CString::new(value.main_prefix).unwrap(),
+            name: CString::new(value.name).unwrap().into(),
+            main_prefix: CString::new(value.main_prefix).unwrap().into(),
             cq_zone: value.cq_zone,
             itu_zone: value.itu_zone,
-            continent: value.continent.as_cstr(),
+            continent: value.continent.as_cstr().into(),
             lat: value.lat,
             lon: value.lon,
             timezone: value.timezone,
@@ -117,66 +151,66 @@ impl From<&CountryLine<'_>> for Country {
 #[derive(Default)]
 pub struct CountryData {
     countries: Vec<Country>,
+}
+
+impl CountryData {
+    fn push(&mut self, country: CountryLine) {
+        self.countries.push((&country).into());
+    }
+
+    fn last(&self) -> Option<(usize, &Country)> {
+        self.countries.last().map(|c| (self.countries.len() - 1, c))
+    }
+
+    pub fn get(&self, idx: usize) -> Option<&Country> {
+        self.countries.get(idx)
+    }
+
+    pub fn clear(&mut self) {
+        self.countries.clear();
+    }
+
+    pub fn len(&self) -> usize {
+        self.countries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.countries.is_empty()
+    }
+}
+
+#[derive(Default)]
+pub struct PrefixData {
     prefixes: Vec<Prefix>,
     prefix_map: FxHashMap<String, usize>,
     version: [u8; VERSION_LENGTH],
 }
 
-impl CountryData {
-    fn push_country(&mut self, country: CountryLine) {
-        self.countries.push((&country).into());
+impl PrefixData {
+    fn push(&mut self, prefix: Prefix) {
+        let prefix_raw = prefix.prefix.as_cstr();
+        let prefix_b = prefix_raw.to_bytes_with_nul();
+        if prefix_b.starts_with(b"VER") && prefix_b.len() == VERSION_LENGTH && prefix_b.is_ascii() {
+            self.version.as_mut_slice().copy_from_slice(prefix_b);
+        }
+        self.prefix_map
+            .insert(prefix_raw.to_str().unwrap().to_owned(), self.prefixes.len());
+        self.prefixes.push(prefix);
     }
 
-    fn push_prefixes(&mut self, prefixes: &[parser::Prefix]) {
-        let country = self.countries.last().expect("FIXME");
-        let country_idx = self.countries.len() - 1;
-
+    fn extend(&mut self, prefixes: &[parser::Prefix], country: &Country, country_idx: usize) {
         for prefix in prefixes {
             let prefix = Prefix::from_parsed(prefix, country, country_idx);
-            Self::push_prefix(
-                prefix,
-                &mut self.prefixes,
-                &mut self.prefix_map,
-                &mut self.version,
-            );
+            self.push(prefix);
         }
     }
 
-    fn push_prefix(
-        prefix: Prefix,
-        prefixes: &mut Vec<Prefix>,
-        prefix_map: &mut FxHashMap<String, usize>,
-        version: &mut [u8; VERSION_LENGTH],
-    ) {
-        let prefix_b = prefix.prefix.as_bytes_with_nul();
-        if prefix_b.starts_with(b"VER") && prefix_b.len() == VERSION_LENGTH && prefix_b.is_ascii() {
-            version.as_mut_slice().copy_from_slice(prefix_b);
+    pub fn version(&self) -> Option<&str> {
+        if self.version[0] == 0 {
+            None
+        } else {
+            Some(std::str::from_utf8(&self.version[..VERSION_LENGTH - 1]).unwrap())
         }
-        prefix_map.insert(prefix.prefix.to_str().unwrap().to_owned(), prefixes.len());
-        prefixes.push(prefix);
-    }
-
-    pub fn load<E, R: Read>(reader: R) -> Result<CountryData, std::io::Error> {
-        let mut data = CountryData::default();
-
-        parse_reader(
-            reader,
-            |line: Result<_, _>| match line {
-                Ok((_, Line::Country(country))) => {
-                    data.push_country(country);
-                    Ok(())
-                }
-                Ok((_, Line::Prefixes(prefixes))) => {
-                    data.push_prefixes(&prefixes);
-                    Ok(())
-                }
-                Ok((_, Line::Empty)) => Ok(()),
-                Err(_) => Err(std::io::Error::from(std::io::ErrorKind::InvalidData)),
-            },
-            MAX_LINE_LENGTH,
-        )?;
-
-        Ok(data)
     }
 
     pub fn find_full_match(&self, call: &str) -> Option<usize> {
@@ -205,20 +239,89 @@ impl CountryData {
         None
     }
 
-    pub fn prefix_by_index(&self, idx: usize) -> Option<&Prefix> {
+    pub fn get(&self, idx: usize) -> Option<&Prefix> {
         self.prefixes.get(idx)
     }
 
-    pub fn country_by_index(&self, idx: usize) -> Option<&Country> {
-        self.countries.get(idx)
+    pub fn clear(&mut self) {
+        self.prefixes.clear();
+        self.prefix_map.clear();
+        self.version = Default::default();
     }
 
-    pub fn version(&self) -> Option<&str> {
-        if self.version[0] == 0 {
-            None
-        } else {
-            Some(std::str::from_utf8(&self.version[..VERSION_LENGTH - 1]).unwrap())
-        }
+    pub fn len(&self) -> usize {
+        self.prefixes.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.prefixes.is_empty()
+    }
+}
+
+#[derive(Default)]
+pub struct DxccData {
+    pub countries: CountryData,
+    pub prefixes: PrefixData,
+}
+
+impl DxccData {
+    pub fn load<E, R: Read>(reader: R) -> Result<DxccData, std::io::Error> {
+        let mut countries = CountryData::default();
+        let mut prefixes = PrefixData::default();
+
+        countries.countries.push(Country::dummy());
+
+        parse_reader(
+            reader,
+            |line: Result<_, _>| match line {
+                Ok((_, Line::Country(country))) => {
+                    countries.push(country);
+                    Ok(())
+                }
+                Ok((_, Line::Prefixes(prefix_line))) => {
+                    let (country_idx, country) = countries
+                        .last()
+                        .unwrap_or_else(|| (0, dummy_country()));
+
+                    prefixes.extend(&prefix_line, country, country_idx);
+                    Ok(())
+                }
+                Ok((_, Line::Empty)) => Ok(()),
+                Err(_) => Err(std::io::Error::from(std::io::ErrorKind::InvalidData)),
+            },
+            MAX_LINE_LENGTH,
+        )?;
+
+        Ok(DxccData {
+            countries,
+            prefixes,
+        })
+    }
+
+    fn push_country_str<'a>(
+        &mut self,
+        line: &'a str,
+    ) -> Result<(), nom::Err<nom::error::Error<&'a str>>> {
+        let (_, country_line) = all_consuming(parser::country_line)(line)?;
+        self.countries.push(country_line);
+
+        Ok(())
+    }
+
+    fn push_prefix_str<'a>(
+        &mut self,
+        line: &'a str,
+    ) -> Result<(), nom::Err<nom::error::Error<&'a str>>> {
+        let (_, prefix_line) = all_consuming(parser::raw_prefix_line)(line)?;
+
+        let (country_idx, last_country) = self
+            .countries
+            .last()
+            .unwrap_or_else(|| (0, dummy_country()));
+
+        self.prefixes
+            .extend(&prefix_line, last_country, country_idx);
+        Ok(())
     }
 }
 

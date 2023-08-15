@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dxcc.h"
 #include "get_time.h"
 #include "printcall.h"
 #include "tlf.h"

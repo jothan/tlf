@@ -4,7 +4,6 @@
 #include <glob.h>
 
 #include "../src/tlf.h"
-#include "../src/dxcc.h"
 #include "../src/readctydata.h"
 #include "../src/globalvars.h"
 #include "../src/getctydata.h"
@@ -13,13 +12,13 @@
 #include "../src/readcalls.h"
 #include "../src/setcontest.h"
 #include "../src/showscore.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/log_utils.o
 // OBJECT ../src/addcall.o
 // OBJECT ../src/addmult.o
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/getctydata.o
 // OBJECT ../src/getexchange.o
 // OBJECT ../src/getpx.o

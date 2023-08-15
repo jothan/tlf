@@ -41,6 +41,7 @@
 #include "plugin.h"
 #include "setcontest.h"
 #include "tlf.h"
+#include "rust.h"
 
 char *calc_continent(int zone);
 
@@ -99,7 +100,7 @@ bool exist_in_country_list() {
 
 
 /* HA2OS - check if continent is in CONTINENT_LIST from logcfg.dat */
-bool is_in_continentlist(char *continent) {
+bool is_in_continentlist(const char *continent) {
     int i = 0;
 
     while (strlen(continent_multiplier_list[i]) != 0) {
@@ -157,7 +158,7 @@ int scoreByMode(struct qso_t *qso) {
 int scoreByContinentOrCountry(struct qso_t *qso) {
 
     int points = 0;
-    prefix_data *ctyinfo = getctyinfo(qso->call);
+    const prefix_data *ctyinfo = getctyinfo(qso->call);
     bool inCountryList = is_in_countrylist(ctyinfo->dxcc_ctynr);
 
     if (countrylist_only) {
@@ -222,7 +223,7 @@ int scoreDefault(struct qso_t *qso) {
 int score_wpx(struct qso_t *qso) {
     int points;
 
-    prefix_data *ctyinfo = getctyinfo(qso->call);
+    const prefix_data *ctyinfo = getctyinfo(qso->call);
     int countrynr = ctyinfo->dxcc_ctynr;
 
     if (countrynr == my.countrynr) {
@@ -271,9 +272,9 @@ int score_cqww(struct qso_t *qso) {
     int points;
     int zone;
 
-    prefix_data *ctyinfo = getctyinfo(qso->call);
+    const prefix_data *ctyinfo = getctyinfo(qso->call);
     int countrynr = ctyinfo->dxcc_ctynr;
-    char *continent = ctyinfo->continent;
+    const char *continent = ctyinfo->continent;
 
     if (countrynr == 0) {
 	zone = atoi(qso->comment);
@@ -316,7 +317,7 @@ int score_arrlfd(struct qso_t *qso) {
 int score_arrldx_usa(struct qso_t *qso) {
     int points;
 
-    prefix_data *ctyinfo = getctyinfo(qso->call);
+    const prefix_data *ctyinfo = getctyinfo(qso->call);
     int countrynr = ctyinfo->dxcc_ctynr;
 
     if ((countrynr == w_cty) || (countrynr == ve_cty)) {

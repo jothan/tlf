@@ -7,7 +7,7 @@
 #include "../src/tlf_panel.h"
 #include "../src/searchlog.h"
 #include "../src/setcontest.h"
-#include "../src/dxcc.h"
+#include "../src/rust.h"
 
 // OBJECT ../src/addpfx.o
 // OBJECT ../src/addmult.o
@@ -61,23 +61,6 @@ void clusterinfo() {
 void refresh_splitlayout() {
 }
 
-// dxcc.c
-static dxcc_data dummy_dxcc = {
-    "Noland",
-    1,
-    2,
-    "NO",
-    34,
-    56,
-    7,
-    "QQ",
-    false
-};
-
-dxcc_data *dxcc_by_index(unsigned int index) {
-    return &dummy_dxcc;
-}
-
 // getctydata.c
 int getctynr(char *checkcallptr) {
     return 42;
@@ -87,7 +70,7 @@ int getctydata(char *checkcallptr) {
     return 0;
 }
 
-prefix_data *getctyinfo(char *call) {
+const prefix_data *getctyinfo(char *call) {
     return NULL;
 }
 

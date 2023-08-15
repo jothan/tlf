@@ -30,13 +30,13 @@
 
 #include "addcall.h"
 #include "addpfx.h"
-#include "dxcc.h"
 #include "get_time.h"
 #include "globalvars.h"		// Includes glib.h and tlf.h
 #include "lancode.h"
 #include "qsonr_to_str.h"
 #include "setcontest.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 void prepare_fixed_part(char *logline, struct qso_t *qso);

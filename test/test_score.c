@@ -1,10 +1,10 @@
 #include "test.h"
 
-#include "../src/dxcc.h"
 #include "../src/getctydata.h"
 #include "../src/score.h"
 #include "../src/setcontest.h"
 #include "../src/tlf.h"
+#include "../src/rust.h"
 
 #include "../src/globalvars.h"
 
@@ -12,7 +12,6 @@
 // OBJECT ../src/score.o
 // OBJECT ../src/addmult.o
 // OBJECT ../src/bands.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/focm.o
 // OBJECT ../src/getctydata.o
 // OBJECT ../src/getpx.o

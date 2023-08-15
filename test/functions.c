@@ -8,11 +8,11 @@ int __wrap_key_get() {
 }
 
 // wrap with a plugin function
-int_func_t key_poll_func = NULL;
+int_func_t key_wait_func = NULL;
 
-int __wrap_key_poll() {
-    if (key_poll_func != NULL) {
-	return key_poll_func();
+int __wrap_key_wait(int timeout) {
+    if (key_wait_func != NULL) {
+	return key_wait_func();
     }
     return -1;
 }

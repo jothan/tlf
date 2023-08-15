@@ -195,14 +195,16 @@ fn prefix(input: &str) -> PResult<Prefix> {
 }
 
 pub fn prefix_line(input: &str) -> PResult<Vec<Prefix>> {
-    map(
         preceded(
-            space1,
+            space1, raw_prefix_line)(input)
+}
+
+pub fn raw_prefix_line(input: &str) -> PResult<Vec<Prefix>> {
+    map(
             pair(
                 many0(terminated(prefix, tag(","))),
                 opt(terminated(prefix, tag(";"))),
             ),
-        ),
         |(mut start, end)| {
             if let Some(end) = end {
                 start.push(end);

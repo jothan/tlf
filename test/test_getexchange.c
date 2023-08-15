@@ -11,7 +11,6 @@
 // OBJECT ../src/getexchange.o
 // OBJECT ../src/addmult.o
 // OBJECT ../src/addpfx.o
-// OBJECT ../src/dxcc.o
 // OBJECT ../src/printcall.o
 // OBJECT ../src/setcontest.o
 // OBJECT ../src/focm.o

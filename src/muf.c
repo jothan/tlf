@@ -23,7 +23,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "dxcc.h"
 #include "get_time.h"
 #include "globalvars.h"
 #include "getwwv.h"
@@ -31,6 +30,7 @@
 #include "qrb.h"
 #include "tlf_panel.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 // message splitters:
@@ -301,7 +301,7 @@ void muf(void) {
 
     int row;
     double la, l, mf, lh;
-    dxcc_data *dx;
+    const dxcc_data *dx;
     char country[40];
     int i;
     char time_buf[25];

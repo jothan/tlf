@@ -21,9 +21,10 @@
 #ifndef GETCTYDATA_H
 #define GETCTYDATA_H
 
-#include "dxcc.h"
+struct Prefix;
+typedef struct Prefix prefix_data;
 
-prefix_data *getctyinfo(char *call);
+const prefix_data *getctyinfo(char *call);
 int getctynr(char *call);
 int getctydata(char *call);
 int getctydata_pfx(char *call);

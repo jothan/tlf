@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "clear_display.h"
-#include "dxcc.h"
 #include "focm.h"
 #include "changepars.h"
 #include "globalvars.h"
@@ -36,6 +35,7 @@
 #include "tlf_curses.h"
 #include "ui_utils.h"
 #include "bands.h"
+#include "rust.h"
 
 
 void show_mults(void) {

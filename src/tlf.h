@@ -26,7 +26,6 @@
 
 #include "hamlib/rig.h"
 #include "bandmap.h"
-#include "dxcc.h"
 
 enum {
     NO_KEYER,
@@ -163,6 +162,9 @@ typedef struct {
     double Long;    // +: west,  -: east
 } mystation_t;
 
+struct Prefix;
+typedef struct Prefix prefix_data;
+
 /** worked station
  *
  * contains all information about an already worked station */
@@ -170,7 +172,7 @@ typedef struct {
     char call[20]; 		/**< call of the station */
     char exchange[24]; 		/**< the last exchange */
     int band; 			/**< bitmap for worked bands */
-    prefix_data *ctyinfo;	/**< pointer to country info from cty.dat */
+    const prefix_data *ctyinfo;	/**< pointer to country info from cty.dat */
     long qsotime[3][NBANDS];	/**< last timestamp of qso in gmtime
 				  for all modes and bands */
 } worked_t;

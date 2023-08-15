@@ -33,7 +33,6 @@
 #include "bandmap.h"
 #include "bands.h"
 #include "clear_display.h"
-#include "dxcc.h"
 #include "err_utils.h"
 #include "get_time.h"
 #include "getctydata.h"
@@ -44,6 +43,7 @@
 #include "splitscreen.h"
 #include "setcontest.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 #define MAXMINUTES 30
 
@@ -159,7 +159,7 @@ void show_xplanet() {
 
     char callcopy[20];
     FILE *fp;
-    dxcc_data *dx;
+    const dxcc_data *dx;
     static bool nofile = false;
 
 
