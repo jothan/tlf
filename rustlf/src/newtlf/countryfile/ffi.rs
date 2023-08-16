@@ -195,6 +195,23 @@ pub unsafe extern "C" fn getctynr(call: *const c_char) -> usize {
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn getctyinfo(call: *const c_char) -> *const prefix_data {
+    if GETCTYNR_MOCK.get().is_some() {
+        return std::ptr::null();
+    }
+
+    if call.is_null() {
+        return dummy_prefix();
+    }
+
+    let dd = unsafe { DXCC_DATA.get() };
+    let call = unsafe { ptr_to_str(call).unwrap() };
+    let (idx, _) = dd.prefixes.getpfxindex(call);
+    idx.and_then(|idx| dd.prefixes.get(idx))
+        .unwrap_or_else(|| dummy_prefix())
+}
+
+#[no_mangle]
 pub extern "C" fn cty_dat_version() -> *const c_char {
     let dd = unsafe { DXCC_DATA.get() };
     dd.prefixes.version.as_slice().as_ptr() as *const c_char

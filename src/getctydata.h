@@ -21,12 +21,7 @@
 #ifndef GETCTYDATA_H
 #define GETCTYDATA_H
 
-struct Prefix;
-typedef struct Prefix prefix_data;
-
-const prefix_data *getctyinfo(char *call);
 int getctydata(const char *call);
 int getctydata_pfx(const char *call);
-
 
 #endif /* end of include guard: GETCTYDATA_H */

@@ -30,6 +30,7 @@
 #include "getctydata.h"
 #include "globalvars.h"
 #include "tlf.h"
+#include "rust.h"
 
 /**	\brief empty collection of worked stations
  */

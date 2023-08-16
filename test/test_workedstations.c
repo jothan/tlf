@@ -12,10 +12,6 @@
 
 prefix_data pfx_dummy = { };
 
-const prefix_data *getctyinfo(char * call) {
-    return &pfx_dummy;
-}
-
 time_t get_time() {
     return (time_t)mock();
 }
@@ -34,6 +30,7 @@ void insert_call(char *call, long time) {
 }
 
 int setup_default(void **state) {
+    mock_getctynr(0);
     init_worked();
     insert_call("W1AA", 80000);
     insert_call("OE3XYZ", 80500);

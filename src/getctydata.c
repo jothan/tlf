@@ -33,12 +33,6 @@
 #include "setcontest.h"
 #include "rust.h"
 
-/* lookup dxcc country and prefix information from callsign */
-const prefix_data *getctyinfo(char *call) {
-    int w = getpfxindex(call, NULL);
-    return prefix_by_index(w);
-}
-
 /* lookup various dxcc cty data from callsign
  *
  * side effect: set up various global variables

@@ -20,10 +20,6 @@ int getctydata(char *checkcall) {
     return 0;
 }
 
-const prefix_data *getctyinfo(char * call) {
-    return NULL;
-}
-
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
 

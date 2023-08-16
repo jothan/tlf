@@ -110,10 +110,6 @@ int foc_score(char *a) {
     return 0;
 }
 
-const prefix_data *getctyinfo(char *call) {
-    return NULL;
-}
-
 int modify_attr(int attr) {
     // TBD
     return 0;
