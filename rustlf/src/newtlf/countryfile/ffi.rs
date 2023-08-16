@@ -23,6 +23,7 @@ impl GlobalDxccData {
         inner.as_ref().expect("GlobalDxccData not initialized")
     }
 
+    #[allow(clippy::mut_from_ref)]
     unsafe fn get_mut(&self) -> &mut DxccData {
         let inner = &mut *self.0.get();
         inner.get_or_insert_with(Default::default)

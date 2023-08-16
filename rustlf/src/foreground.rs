@@ -182,6 +182,8 @@ pub extern "C" fn wgetch_process(w: *mut tlf::WINDOW) -> c_int {
         let fg = fg.borrow();
         let fg = fg.as_ref().unwrap();
         let (c, err) = fg.process_blocking(&mut (), || unsafe {
+            // Clippy FP, does not want to move w otherwise.
+            #[allow(clippy::redundant_locals)]
             let w = w;
             tlf::wgetch(w.0)
         });
