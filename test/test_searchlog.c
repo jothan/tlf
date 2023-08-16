@@ -62,10 +62,6 @@ void refresh_splitlayout() {
 }
 
 // getctydata.c
-int getctynr(char *checkcallptr) {
-    return 42;
-}
-
 int getctydata(char *checkcallptr) {
     return 0;
 }
@@ -110,6 +106,7 @@ static void write_qsos() {
 }
 
 int setup_default(void **state) {
+    mock_getctynr(42);
     for (int i = 0; i < MAX_CALLS; i++)
 	strcpy(searchresult[i], "");
 

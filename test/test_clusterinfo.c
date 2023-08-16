@@ -15,10 +15,6 @@
 
 int LINES = 25; /* test for 25 lines */
 
-int getctynr(char *checkcall) {
-    return 0;
-}
-
 char thisnode = 'A';
 freq_t node_frequencies[MAXNODES];
 
@@ -80,6 +76,7 @@ static void put_short_line(char *p, int index) {
 }
 
 int setup_default(void **state) {
+    mock_getctynr(0);
     strcpy(my.call, "N0CALL");
 
     xplanet = MARKER_NONE;

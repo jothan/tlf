@@ -21,8 +21,6 @@
 // OBJECT ../src/utils.o
 
 /* export internal function */
-int location_unknown(char *call);
-int getpfxindex(char *checkcallptr, char **normalized_call);
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
 
@@ -141,16 +139,6 @@ void test_best_match(void **state) {
     assert_string_equal(best_prefix("EA8XYZ"), "EA8");
     assert_string_equal(best_prefix("W3A"), "W");
     assert_string_equal(best_prefix("KL7ND"), "KL");
-}
-
-void test_location_known(void **state) {
-    assert_int_equal(location_unknown("LA3BB"), 0);
-    assert_int_equal(location_unknown("LA3BB/P"), 0);
-}
-
-void test_location_unknown(void **state) {
-    assert_int_equal(location_unknown("LA3BB/MM"), 1);
-    assert_int_equal(location_unknown("LA3BB/AM"), 1);
 }
 
 void test_suffix_empty(void **state) {

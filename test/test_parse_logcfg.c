@@ -105,10 +105,6 @@ int getctydata(char *checkcallptr) {
     return 0;
 }
 
-int getctynr(char *checkcall) {
-    return getctydata(checkcall);
-}
-
 int foc_score(char *a) {
     // TBD
     return 0;
@@ -134,6 +130,7 @@ void handle_logging(enum log_lvl lvl, ...) {
 
 /* setup/teardown */
 int setup_default(void **state) {
+    mock_getctynr(99);
     int result = chdir(SRCDIR);
     if (result == -1)
 	perror("chdir");

@@ -33,154 +33,17 @@
 #include "setcontest.h"
 #include "rust.h"
 
-/* check for calls which have no assigned country and no assigned zone,
- * e.g. airborn mobile /AM or maritime mobile /MM
- */
-int location_unknown(const char *call) {
-
-    return g_regex_match_simple("/AM$|/MM$", call,
-				(GRegexCompileFlags)0, (GRegexMatchFlags)0);
-}
-
-
-/* replace callsign area (K2ND/4 -> K4ND)
- *
- * for stations with multiple digits (LZ1000) it replaces the last digit
- * (may be wrong)
- */
-void change_area(char *call, char area) {
-    int i;
-
-    for (i = strlen(call) - 1; i > 0; i--) {
-	if (isdigit(call[i])) {
-	    call[i] = area;
-	    break;
-	}
-    }
-}
-
-
-/* prepare and check callsign and look it up in dxcc data base
- *
- * returns index in data base or -1 if not found
- * if normalized_call ptr is not NULL returns a copy of the normalized call
- * e.g. DL1XYZ/PA gives PA/DL1XYZ
- * caller has to free the copy after use
- */
-int getpfxindex(char *checkcallptr, char **normalized_call) {
-    char checkcall[17] = "";
-    char strippedcall[17] = "";
-
-    if (checkcallptr == NULL) {
-	return -1;
-    }
-
-    int w = 0, abnormal_call = 0;
-    size_t loc;
-
-    g_strlcpy(strippedcall, checkcallptr, sizeof(strippedcall));
-
-    if (strstr(strippedcall, "/QRP") ==
-	    (strippedcall + strlen(strippedcall) - 4))
-	/* drop QRP suffix */
-	strippedcall[strlen(strippedcall) - 4] = '\0';
-
-    /* go out if /MM, /AM or similar */
-    if (location_unknown(strippedcall))
-	strippedcall[0] = '\0';
-
-    g_strlcpy(checkcall, strippedcall, sizeof(checkcall));
-
-    loc = strcspn(checkcall, "/");
-
-    if (loc != strlen(checkcall)) {		/* found a '/' */
-	char checkbuffer[17] = "";
-	char call1[17];
-	char call2[17];
-
-	strncpy(call1, checkcall, loc);		/* 1st part before '/' */
-	call1[loc] = '\0';
-	strcpy(call2, checkcall + loc + 1);	/* 2nd part after '/' */
-
-	if (strlen(call2) < strlen(call1)
-		&& strlen(call2) > 1) {
-	    strcpy(checkcall, call2);
-	    g_strlcat(checkcall, "/", sizeof(checkcall));
-	    g_strlcat(checkcall, call1, sizeof(checkcall));
-	    abnormal_call = 1;
-	    loc = strcspn(checkcall, "/");
-	}
-
-	if (loc > 3) {
-
-	    strncpy(checkbuffer, (checkcall + loc + 1),
-		    (strlen(checkcall) + 1) - loc);
-
-	    if (strlen(checkbuffer) == 1)
-		checkcall[loc] = '\0';
-	    loc = strcspn(checkcall, "/");
-	}
-
-	if (loc != strlen(checkcall)) {
-
-	    if (loc < 5)
-		checkcall[loc] = '\0';	/*  "PA/DJ0LN/P   */
-	}
-
-	/* ------------------------------------------------------------ */
-
-	if ((strlen(checkbuffer) == 1) && isdigit(checkbuffer[0])) {	/*  /3 */
-
-	    change_area(checkcall, checkbuffer[0]);
-
-	} else if (strlen(checkbuffer) > 1)
-	    strcpy(checkcall, checkbuffer);
-
-    }
-
-    /* -------------check full call exceptions first...--------------------- */
-
-    if (abnormal_call == 1) {
-	w = find_full_match(strippedcall);
-    } else {
-	w = find_best_match(strippedcall);
-    }
-
-    if (w < 0 && 0 != strcmp(strippedcall, checkcall)) {
-	// only if not found in prefix full call exception list
-	w = find_best_match(checkcall);
-    }
-
-    if (normalized_call != NULL)
-	*normalized_call = strdup(checkcall);
-
-    return w;
-}
-
 /* lookup dxcc country and prefix information from callsign */
 const prefix_data *getctyinfo(char *call) {
     int w = getpfxindex(call, NULL);
     return prefix_by_index(w);
 }
 
-/* lookup dxcc cty number from callsign */
-int getctynr(char *call) {
-    int w;
-
-    w = getpfxindex(call, NULL);
-
-    if (w >= 0)
-	return prefix_by_index(w)->dxcc_ctynr;
-    else
-	return 0;	/* no country found */
-}
-
-
 /* lookup various dxcc cty data from callsign
  *
  * side effect: set up various global variables
  */
-static int getctydata_internal(char *call, bool get_country) {
+static int getctydata_internal(const char *call, bool get_country) {
     char *normalized_call = NULL;
 
     int w = getpfxindex(call, &normalized_call);
@@ -204,10 +67,10 @@ static int getctydata_internal(char *call, bool get_country) {
     return get_country ? countrynr : w;
 }
 
-int getctydata(char *call) {
+int getctydata(const char *call) {
     return getctydata_internal(call, true);
 }
 
-int getctydata_pfx(char *call) {
+int getctydata_pfx(const char *call) {
     return getctydata_internal(call, false);
 }

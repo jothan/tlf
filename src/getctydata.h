@@ -25,9 +25,8 @@ struct Prefix;
 typedef struct Prefix prefix_data;
 
 const prefix_data *getctyinfo(char *call);
-int getctynr(char *call);
-int getctydata(char *call);
-int getctydata_pfx(char *call);
+int getctydata(const char *call);
+int getctydata_pfx(const char *call);
 
 
 #endif /* end of include guard: GETCTYDATA_H */

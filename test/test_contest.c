@@ -16,10 +16,6 @@
 // OBJECT ../src/utils.o
 
 /* dummys */
-int getctynr(char *checkcall) {
-    return 42;
-}
-
 int getctydata(char *checkcall) {
     return 0;
 }
@@ -34,6 +30,7 @@ int check_mult(struct qso_t *qso) { return -1; }
 contest_config_t config_focm;
 
 int setup_default(void **state) {
+    mock_getctynr(42);
     static char filename[] =  TOP_SRCDIR "/share/cty.dat";
     assert_int_equal(load_ctydata(filename), 0);
 

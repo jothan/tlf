@@ -2,6 +2,7 @@ use cstr::cstr;
 use fxhash::FxHashMap;
 use nom::combinator::all_consuming;
 use std::{
+    borrow::Cow,
     ffi::{CStr, CString},
     fmt::Debug,
     io::Read,
@@ -13,6 +14,7 @@ use crate::ffi::{CStringPtr, StaticCStrPtr};
 use self::parser::{parse_reader, CountryLine, Line};
 
 pub mod ffi;
+pub mod lookup;
 pub mod parser;
 
 const MAX_LINE_LENGTH: usize = 256;
@@ -243,6 +245,24 @@ impl PrefixData {
         self.prefixes.get(idx)
     }
 
+    pub fn getpfxindex<'a>(&self, call: &'a str) -> (Option<usize>, Cow<'a, str>) {
+        let stripped_call = lookup::strip_call(call);
+        let (check_call, abnormal) = lookup::normalize_call(stripped_call);
+
+        let mut idx = if abnormal {
+            self.find_full_match(stripped_call)
+        } else {
+            self.find_best_match(stripped_call)
+        };
+
+        if stripped_call != check_call {
+            // only if not found in prefix full call exception list
+            idx = idx.or_else(|| self.find_best_match(&check_call))
+        }
+
+        (idx, check_call)
+    }
+
     pub fn clear(&mut self) {
         self.prefixes.clear();
         self.prefix_map.clear();
@@ -279,9 +299,8 @@ impl DxccData {
                     Ok(())
                 }
                 Ok((_, Line::Prefixes(prefix_line))) => {
-                    let (country_idx, country) = countries
-                        .last()
-                        .unwrap_or_else(|| (0, dummy_country()));
+                    let (country_idx, country) =
+                        countries.last().unwrap_or_else(|| (0, dummy_country()));
 
                     prefixes.extend(&prefix_line, country, country_idx);
                     Ok(())

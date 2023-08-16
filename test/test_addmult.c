@@ -26,10 +26,6 @@
 // OBJECT ../src/zone_nr.o
 
 /* dummies */
-int getctynr(char *checkcall) {
-    return 42;
-}
-
 int getctydata(char *checkcall) {
     return 0;
 }
@@ -72,6 +68,7 @@ int setup_default(void **state) {
     assert_int_equal(load_ctydata(filename), 0);
 
     setcontest("qso");
+    mock_getctynr(42);
 
     bandinx = BANDINDEX_80;
 

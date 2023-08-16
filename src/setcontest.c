@@ -36,6 +36,7 @@
 #include "setcontest.h"
 #include "score.h"
 #include "tlf.h"
+#include "rust.h"
 
 #include "getexchange.h"
 #include "addmult.h"
