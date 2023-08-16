@@ -25,7 +25,6 @@ flume="0.10"
 rayon="1.7"
 nom="7.1"
 linereader="0.4"
-fxhash="0.2"
 
 [build-dependencies]
 cbindgen = "0.24.3"

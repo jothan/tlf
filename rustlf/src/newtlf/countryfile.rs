@@ -1,12 +1,11 @@
 use cstr::cstr;
-use fxhash::FxHashMap;
 use nom::combinator::all_consuming;
 use std::{
     borrow::Cow,
     ffi::{CStr, CString},
     fmt::Debug,
     io::Read,
-    sync::OnceLock,
+    sync::OnceLock, collections::BTreeMap,
 };
 
 use crate::ffi::{CStringPtr, StaticCStrPtr};
@@ -184,7 +183,7 @@ impl CountryData {
 #[derive(Default)]
 pub struct PrefixData {
     prefixes: Vec<Prefix>,
-    prefix_map: FxHashMap<String, usize>,
+    prefix_map: BTreeMap<String, usize>,
     version: [u8; VERSION_LENGTH],
 }
 
