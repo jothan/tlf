@@ -21,8 +21,7 @@ const VERSION_LENGTH: usize = 12;
 static DUMMY_COUNTRY: OnceLock<Country> = OnceLock::new();
 static DUMMY_PREFIX: OnceLock<Prefix> = OnceLock::new();
 
-#[no_mangle]
-pub extern "C" fn dummy_country() -> &'static Country {
+fn dummy_country() -> &'static Country {
     DUMMY_COUNTRY.get_or_init(Country::dummy)
 }
 
