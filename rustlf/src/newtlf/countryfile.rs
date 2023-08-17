@@ -2,10 +2,11 @@ use cstr::cstr;
 use nom::combinator::all_consuming;
 use std::{
     borrow::Cow,
+    collections::BTreeMap,
     ffi::{CStr, CString},
     fmt::Debug,
     io::Read,
-    sync::OnceLock, collections::BTreeMap,
+    sync::OnceLock,
 };
 
 use crate::ffi::{CStringPtr, StaticCStrPtr};
@@ -66,7 +67,7 @@ pub struct Prefix {
 }
 
 impl Prefix {
-    fn from_parsed(prefix: &parser::Prefix, country: &Country, country_idx: usize) -> Self {
+    pub fn from_parsed(prefix: &parser::Prefix, country: &Country, country_idx: usize) -> Self {
         let o = &prefix.override_;
         let coords = o.coordinates.unwrap_or((country.lat, country.lon));
         Prefix {
@@ -132,8 +133,8 @@ impl Country {
     }
 }
 
-impl From<&CountryLine<'_>> for Country {
-    fn from(value: &CountryLine<'_>) -> Self {
+impl From<CountryLine<'_>> for Country {
+    fn from(value: CountryLine<'_>) -> Self {
         Country {
             name: CString::new(value.name).unwrap().into(),
             main_prefix: CString::new(value.main_prefix).unwrap().into(),
@@ -149,33 +150,31 @@ impl From<&CountryLine<'_>> for Country {
 }
 
 #[derive(Default)]
-pub struct CountryData {
-    countries: Vec<Country>,
-}
+pub struct CountryData(Vec<Country>);
 
 impl CountryData {
-    fn push(&mut self, country: CountryLine) {
-        self.countries.push((&country).into());
+    pub fn push(&mut self, country: Country) {
+        self.0.push(country);
     }
 
-    fn last(&self) -> Option<(usize, &Country)> {
-        self.countries.last().map(|c| (self.countries.len() - 1, c))
+    pub fn last(&self) -> Option<(usize, &Country)> {
+        self.0.last().map(|c| (self.0.len() - 1, c))
     }
 
     pub fn get(&self, idx: usize) -> Option<&Country> {
-        self.countries.get(idx)
+        self.0.get(idx)
     }
 
     pub fn clear(&mut self) {
-        self.countries.clear();
+        self.0.clear();
     }
 
     pub fn len(&self) -> usize {
-        self.countries.len()
+        self.0.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.countries.is_empty()
+        self.0.is_empty()
     }
 }
 
@@ -187,7 +186,7 @@ pub struct PrefixData {
 }
 
 impl PrefixData {
-    fn push(&mut self, prefix: Prefix) {
+    pub fn push(&mut self, prefix: Prefix) {
         let prefix_raw = prefix.prefix.as_cstr();
         let prefix_b = prefix_raw.to_bytes_with_nul();
         if prefix_b.starts_with(b"VER") && prefix_b.len() == VERSION_LENGTH && prefix_b.is_ascii() {
@@ -198,7 +197,12 @@ impl PrefixData {
         self.prefixes.push(prefix);
     }
 
-    fn extend(&mut self, prefixes: &[parser::Prefix], country: &Country, country_idx: usize) {
+    pub fn push_parsed(
+        &mut self,
+        prefixes: &[parser::Prefix],
+        country: &Country,
+        country_idx: usize,
+    ) {
         for prefix in prefixes {
             let prefix = Prefix::from_parsed(prefix, country, country_idx);
             self.push(prefix);
@@ -287,20 +291,20 @@ impl DxccData {
         let mut countries = CountryData::default();
         let mut prefixes = PrefixData::default();
 
-        countries.countries.push(Country::dummy());
+        countries.push(Country::dummy());
 
         parse_reader(
             reader,
             |line: Result<_, _>| match line {
                 Ok((_, Line::Country(country))) => {
-                    countries.push(country);
+                    countries.push(country.into());
                     Ok(())
                 }
                 Ok((_, Line::Prefixes(prefix_line))) => {
                     let (country_idx, country) =
                         countries.last().unwrap_or_else(|| (0, dummy_country()));
 
-                    prefixes.extend(&prefix_line, country, country_idx);
+                    prefixes.push_parsed(&prefix_line, country, country_idx);
                     Ok(())
                 }
                 Ok((_, Line::Empty)) => Ok(()),
@@ -320,7 +324,7 @@ impl DxccData {
         line: &'a str,
     ) -> Result<(), nom::Err<nom::error::Error<&'a str>>> {
         let (_, country_line) = all_consuming(parser::country_line)(line)?;
-        self.countries.push(country_line);
+        self.countries.push(country_line.into());
 
         Ok(())
     }
@@ -337,13 +341,13 @@ impl DxccData {
             .unwrap_or_else(|| (0, dummy_country()));
 
         self.prefixes
-            .extend(&prefix_line, last_country, country_idx);
+            .push_parsed(&prefix_line, last_country, country_idx);
         Ok(())
     }
 }
 
 #[repr(u8)]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Continent {
     NorthAmerica,
     SouthAmerica,

@@ -27,7 +27,7 @@ pub enum Line<'a> {
     Empty,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct CountryLine<'a> {
     pub main_prefix: &'a str,
     pub name: &'a str,
