@@ -33,37 +33,42 @@ pub(crate) fn normalize_call(call: &str) -> (Cow<str>, bool) {
     let mut call = Cow::from(call);
     let mut checkbuffer = String::new();
 
-    if let Some((call1, call2)) = call.split_once('/') {
-        let mut loc = call1.len();
-        if call2.len() < call1.len() && call2.len() > 1 {
-            let mut c = String::from(call2);
-            c.push('/');
-            c.push_str(call1);
-            abnormal = true;
+    let (call1, call2) = if let Some(parts) = call.split_once('/') {
+        parts
+    } else {
+        return (call, false);
+    };
 
-            call = c.into();
-            loc = call.find('/').unwrap();
-        }
+    let loc;
+    if call2.len() < call1.len() && call2.len() > 1 {
+        let mut c = String::from(call2);
+        c.push('/');
+        c.push_str(call1);
+        abnormal = true;
 
-        if loc > 3 {
-            let (left, right) = call.split_at(loc);
-            checkbuffer = right[1..].to_string();
-            if checkbuffer.len() == 1 {
-                call = left.to_owned().into();
-            }
-        }
+        call = c.into();
+        loc = call.find('/').unwrap();
+    } else {
+        loc = call1.len();
+    }
 
-        if let Some(loc) = call.find('/') {
-            if loc < 5 {
-                call.to_mut().truncate(loc);
-            }
+    if loc > 3 {
+        checkbuffer = call[loc + 1..].to_owned();
+        if checkbuffer.len() == 1 {
+            call.to_mut().truncate(loc);
         }
+    }
 
-        if checkbuffer.len() == 1 && checkbuffer.as_bytes()[0].is_ascii_digit() {
-            change_area(call.to_mut(), checkbuffer.as_bytes()[0]);
-        } else if checkbuffer.len() > 1 {
-            call = checkbuffer.into();
+    if let Some(loc) = call.find('/') {
+        if loc < 5 {
+            call.to_mut().truncate(loc);
         }
+    }
+
+    if checkbuffer.len() == 1 && checkbuffer.as_bytes()[0].is_ascii_digit() {
+        change_area(call.to_mut(), checkbuffer.as_bytes()[0]);
+    } else if checkbuffer.len() > 1 {
+        call = checkbuffer.into();
     }
 
     (call, abnormal)
