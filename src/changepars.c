@@ -388,7 +388,7 @@ int changepars(void) {
 		break;
 	    }
 
-	    if (callmaster == NULL) {
+	    if (callmaster_len() == 0) {
 		TLF_LOG_INFO(
 		    "Simulator mode needs callmaster database");
 		break;
@@ -692,8 +692,10 @@ void networkinfo(void) {
     else
 	mvaddstr(12 + nodes, 10, "Band output: off");
 
+    char cm_version[CALLMASTER_VERSION_LEN+1];
+    callmaster_version(cm_version);
     mvprintw(13 + nodes, 10, "callmaster : %s",
-	     (callmaster_version[0] != 0 ? callmaster_version : "n/a"));
+	     (cm_version[0] != 0 ? cm_version : "n/a"));
     mvprintw(14 + nodes, 10, "cty.dat    : %s",
 	     (cty_dat_version()[0] != 0 ? cty_dat_version() : "n/a"));
 

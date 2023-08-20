@@ -24,11 +24,7 @@
 #include <stdbool.h>
 #include <glib.h>
 
-extern GPtrArray *callmaster;
-#define CALLMASTERARRAY(n) ((char *) g_ptr_array_index(callmaster, n))
-
 extern char *callmaster_filename;
-extern char callmaster_version[12];
 
 int load_callmaster(void);
 

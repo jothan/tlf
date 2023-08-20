@@ -59,8 +59,6 @@
 #define CALLMASTER_SIZE 16000       // initial allocation size
 
 char *callmaster_filename = NULL;
-GPtrArray *callmaster = NULL;
-char callmaster_version[12];   // VERyyyymmdd
 
 char searchresult[MAX_CALLS][82];
 char result[MAX_CALLS][82];
@@ -170,10 +168,19 @@ void displayCallInfo(const dxcc_data *dx, char *pxstr) {
 #define PARTIALS_Y0     1
 #define PARTIALS_X0     0
 
+typedef struct show_partial_args
+{
+    int *row;
+    int *col;
+    GHashTable *callset;
+    int *nr_suggested;
+    char *suggested_call;
+} show_partial_args;
+
 //
 // return: true if display is full
 //
-static bool show_partial(int *row, int *col, char *call,
+static bool show_partial(int *row, int *col, const char *call,
 			 GHashTable *callset,
 			 int *nr_suggested, char *suggested_call) {
 
@@ -190,7 +197,7 @@ static bool show_partial(int *row, int *col, char *call,
 	return true;    // display full
     }
 
-    if (!g_hash_table_add(callset, call)) {
+    if (!g_hash_table_add(callset, (void*)call)) {
 	return false;   // already shown
     }
 
@@ -205,6 +212,12 @@ static bool show_partial(int *row, int *col, char *call,
     *nr_suggested += 1;
 
     return false;   // assume it's not full yet
+}
+
+static bool show_partial_adapter(const char *call, const void *inargs)
+{
+    show_partial_args *args = (show_partial_args *)inargs;
+    return show_partial(args->row, args->col, call, args->callset, args->nr_suggested, args->suggested_call);
 }
 
 int displayPartials(char *suggested_call) {
@@ -281,29 +294,11 @@ int displayPartials(char *suggested_call) {
 
     attron(modify_attr(COLOR_PAIR(C_LOG) | A_STANDOUT));
 
+    show_partial_args pargs = {&row, &col, callset, &suggested, suggested_call};
+
     // make 2 runs: fist look for calls starting with
     // then the ones containing 'current_qso.call'
-    for (int run = 1; run <= 2; run++) {
-	for (k = 0; k < callmaster->len && !full; k++) {
-
-	    char *mastercall = CALLMASTERARRAY(k);
-
-	    int match;
-	    if (run == 1) { // starts with
-		match = (strncmp(mastercall, current_qso.call, hislen) == 0);
-	    } else {        // contains
-		match = (strstr(mastercall, current_qso.call) != NULL);
-	    }
-
-	    if (!match) {
-		continue;   // not matching
-	    }
-
-	    full = show_partial(&row, &col, mastercall, callset,
-				&suggested, suggested_call);
-
-	}
-    }
+    callmaster_show_partials(current_qso.call, show_partial_adapter, &pargs);
 
     g_hash_table_destroy(callset);
 
@@ -731,78 +726,20 @@ void searchlog() {
     }
 }
 
-/* loading callmaster database */
-static void init_callmaster(void) {
-    callmaster_version[0] = 0;
-    if (callmaster) {
-	g_ptr_array_free(callmaster, TRUE);
-    }
-    callmaster = g_ptr_array_new_full(CALLMASTER_SIZE, g_free);
-}
-
 /** loads callmaster database from file
  * returns number of loaded calls
  */
 int load_callmaster(void) {
-
-    FILE *cfp;
     char *callmaster_location;
-    char s_inputbuffer[186] = "";
-
-    init_callmaster();
 
     if (callmaster_filename == NULL)
 	callmaster_filename = g_strdup(CALLMASTER_DEFAULT);
 
     callmaster_location = find_available(callmaster_filename);
 
-    if ((cfp = fopen(callmaster_location, "r")) == NULL) {
-	g_free(callmaster_location);
-	TLF_LOG_WARN("Error opening callmaster file.");
-	return 0;
-    }
+    int ret = load_callmaster_inner(callmaster_location, CONTEST_IS(ARRL_SS));
     g_free(callmaster_location);
-
-    GHashTable *callset = g_hash_table_new(g_str_hash, g_str_equal);
-
-    while (fgets(s_inputbuffer, 85, cfp) != NULL) {
-
-	g_strstrip(s_inputbuffer);
-
-	/* skip comment lines and calls shorter than 3 chars */
-	if (s_inputbuffer[0] == '#' || strlen(s_inputbuffer) < 3) {
-	    continue;
-	}
-
-	/* store version */
-	if (strlen(s_inputbuffer) == 11 && strncmp(s_inputbuffer, "VER", 3) == 0) {
-	    strcpy(callmaster_version, s_inputbuffer);      // save it
-	}
-
-	char *call = g_ascii_strup(s_inputbuffer, 11);
-
-	if (CONTEST_IS(ARRL_SS)) {
-	    /* keep only NA stations */
-	    if (strchr("AKWVCN", call[0]) == NULL) {
-		g_free(call);
-		continue;
-	    }
-	}
-
-	if (g_hash_table_contains(callset, call)) { // already have this call
-	    g_free(call);
-	    continue;
-	}
-
-	g_hash_table_add(callset, call);
-
-	g_ptr_array_add(callmaster, call);
-    }
-
-    g_hash_table_destroy(callset);
-
-    fclose(cfp);
-    return callmaster->len;
+    return ret;
 }
 
 

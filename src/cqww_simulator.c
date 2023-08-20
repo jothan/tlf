@@ -86,7 +86,6 @@ void cqww_simulator(void) {
 	return;
     }
 
-    static int callnumber = 0;
     static int repeat_count = 0;
 
     char callcpy[80];
@@ -101,10 +100,9 @@ void cqww_simulator(void) {
 
 	set_simulator_tone();
 
-	callnumber += 8327 +  this_second;  // "random"
-	callnumber %= callmaster->len;
+        callmaster_pick_random();
 
-	sendmessage(CALLMASTERARRAY(callnumber));
+	sendmessage(callmaster_random_call());
 
 	repeat_count = 0;
 	restore_tone();
@@ -113,7 +111,7 @@ void cqww_simulator(void) {
 
 	set_simulator_tone();
 
-	strcpy(callcpy, CALLMASTERARRAY(callnumber));
+	strcpy(callcpy, callmaster_random_call());
 	getctydata(callcpy);
 
 	char save = cqzone[0];
@@ -139,12 +137,12 @@ void cqww_simulator(void) {
 	    slow = 3;
 	}
 
-	strcpy(callcpy, CALLMASTERARRAY(callnumber));
+	strcpy(callcpy, callmaster_random_call());
 	getctydata(callcpy);
 
 	char *str = g_strdup_printf("%s%s%s",
 				    &"---"[3 - slow],
-				    CALLMASTERARRAY(callnumber),
+				    callmaster_random_call(),
 				    &"+++"[3 - slow]);
 	sendmessage(str);
 	g_free(str);

@@ -172,24 +172,24 @@ void test_callmaster_ok(void **state) {
     write_callmaster("callmaster", "# data\nA1AA\na1aa\na2bb\n\n");
     int n = load_callmaster();
     assert_int_equal(n, 2);
-    assert_string_equal(CALLMASTERARRAY(0), "A1AA");
-    assert_string_equal(CALLMASTERARRAY(1), "A2BB");
+    assert_true(callmaster_contains("A1AA"));
+    assert_true(callmaster_contains("A2BB"));
 }
 
 void test_callmaster_ok_dos(void **state) {
     write_callmaster("callmaster", "# data\r\nA1AA\r\nA2BB\r\n\r\n");
     int n = load_callmaster();
     assert_int_equal(n, 2);
-    assert_string_equal(CALLMASTERARRAY(0), "A1AA");
-    assert_string_equal(CALLMASTERARRAY(1), "A2BB");
+    assert_true(callmaster_contains("A1AA"));
+    assert_true(callmaster_contains("A2BB"));
 }
 
 void test_callmaster_ok_spaces(void **state) {
     write_callmaster("callmaster", " # data \n A1AA \n A2BB \n\n");
     int n = load_callmaster();
     assert_int_equal(n, 2);
-    assert_string_equal(CALLMASTERARRAY(0), "A1AA");
-    assert_string_equal(CALLMASTERARRAY(1), "A2BB");
+    assert_true(callmaster_contains("A1AA"));
+    assert_true(callmaster_contains("A2BB"));
 }
 
 void test_callmaster_ok_arrlss(void **state) {
@@ -197,8 +197,8 @@ void test_callmaster_ok_arrlss(void **state) {
     write_callmaster("callmaster", "# data\nA1AA\nG0CC\nN2BB\n\n");
     int n = load_callmaster();
     assert_int_equal(n, 2);
-    assert_string_equal(CALLMASTERARRAY(0), "A1AA");
-    assert_string_equal(CALLMASTERARRAY(1), "N2BB");
+    assert_true(callmaster_contains("A1AA"));
+    assert_true(callmaster_contains("N2BB"));
 }
 
 void test_use_different_callmaster(void **state) {
@@ -207,7 +207,7 @@ void test_use_different_callmaster(void **state) {
     callmaster_filename = g_strdup("master.scp");
     int n = load_callmaster();
     assert_int_equal(n, 2);
-    assert_string_equal(CALLMASTERARRAY(0), "A1CC");
+    assert_true(callmaster_contains("A1CC"));
 }
 
 void test_init_search_panel_no_contest(void **state) {
