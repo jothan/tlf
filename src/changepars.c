@@ -404,6 +404,7 @@ int changepars(void) {
 		    ctcomp = false;
 		} else {
 		    mvaddstr(13, 29, "Simulator on");
+		    callmaster_pick_random();
 		    refreshp();
 		    fg_sleep(1);
 		}
