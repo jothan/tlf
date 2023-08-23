@@ -157,11 +157,10 @@ pub unsafe extern "C" fn callmaster_version(buffer: *mut c_char) {
         .filter(|c| c.as_bytes().len() == CALLMASTER_VERSION_LEN)
         .next();
 
-    let buffer = std::slice::from_raw_parts_mut(buffer as *mut u8, CALLMASTER_VERSION_LEN + 1);
     if let Some(version) = version {
-        buffer.copy_from_slice(version.as_bytes_with_nul())
+        buffer.copy_from_nonoverlapping(version.as_ptr(), CALLMASTER_VERSION_LEN + 1);
     } else {
-        buffer[0] = 0;
+        buffer.write(0);
     }
 }
 
