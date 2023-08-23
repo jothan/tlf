@@ -1,5 +1,5 @@
 {
-        "configurations": [
+    "configurations": [
         {
             "name": "(gdb) Launch",
             "type": "cppdbg",
@@ -23,6 +23,18 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "(lldb) Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/tlf",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "terminal": "external",
+            "env": {
+                "TERM": "xterm-256color"
+            },
         }
-        ]
+    ]
 }
