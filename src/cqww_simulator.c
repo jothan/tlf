@@ -88,8 +88,6 @@ void cqww_simulator(void) {
 
     static int repeat_count = 0;
 
-    char callcpy[80];
-
     simstate_t state = get_simulator_state();
 
     if (state == CALL) {
@@ -111,8 +109,7 @@ void cqww_simulator(void) {
 
 	set_simulator_tone();
 
-	strcpy(callcpy, callmaster_random_call());
-	getctydata(callcpy);
+	getctydata(callmaster_random_call());
 
 	char save = cqzone[0];
 	if (get_time() % 2 == 0) {  // use short numbers randomly
@@ -137,8 +134,7 @@ void cqww_simulator(void) {
 	    slow = 3;
 	}
 
-	strcpy(callcpy, callmaster_random_call());
-	getctydata(callcpy);
+	getctydata(callmaster_random_call());
 
 	char *str = g_strdup_printf("%s%s%s",
 				    &"---"[3 - slow],
