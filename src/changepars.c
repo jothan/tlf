@@ -32,7 +32,6 @@
 #include <unistd.h>
 
 #include "audio.h"
-#include "cqww_simulator.h"
 #include "changepars.h"
 #include "clear_display.h"
 #include "editlog.h"

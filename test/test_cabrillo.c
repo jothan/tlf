@@ -2,7 +2,6 @@
 
 #include "../src/cabrillo_utils.h"
 #include "../src/readcabrillo.h"
-#include "../src/cqww_simulator.h"
 #include "../src/log_utils.h"
 
 // OBJECT ../src/cabrillo_utils.o
@@ -16,8 +15,6 @@
 // OBJECT ../src/utils.o
 
 /* test stubs and dummies */
-bool simulator = false;
-
 char section[8] = "";       // defined in getexchange.c
 
 int qsoflags_for_qtc[MAX_QSOS];

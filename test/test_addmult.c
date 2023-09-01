@@ -31,7 +31,6 @@ int getctydata(char *checkcall) {
 }
 
 void checkexchange(struct qso_t *qso, bool interactive) {}
-void sendmessage(const char *msg) {}
 
 contest_config_t config_focm;
 struct qso_t *this_qso;

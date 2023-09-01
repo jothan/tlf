@@ -28,7 +28,6 @@
 
 #include "audio.h"
 #include "background_process.h"
-#include "cqww_simulator.h"
 #include "callinput.h"
 #include "clear_display.h"
 #include "getexchange.h"

@@ -1,5 +1,6 @@
 // unsafe, unsafe everywhere
 #![allow(clippy::missing_safety_doc)]
+#![feature(linkage)]
 
 pub mod audio;
 pub mod background_process;
@@ -16,3 +17,4 @@ pub mod newtlf;
 mod qtcutil;
 pub mod workqueue;
 pub mod write_keyer;
+pub mod weakstubs;

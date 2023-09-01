@@ -22,7 +22,6 @@ int getctydata(char *checkcall) {
 
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
-void sendmessage(const char *msg) {}
 
 contest_config_t config_focm;
 

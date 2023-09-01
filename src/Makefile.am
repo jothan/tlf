@@ -9,7 +9,6 @@ tlf_SOURCES = \
 	cabrillo_utils.c calledit.c callinput.c changefreq.c changepars.c \
 	change_rst.c checklogfile.c checkqtclogfile.c \
 	cleanup.c clear_display.c clusterinfo.c \
-	cqww_simulator.c \
 	dummy.c deleteqso.c \
 	edit_last.c editlog.c err_utils.c \
 	fldigixmlrpc.c freq_display.c focm.c \
@@ -45,7 +44,6 @@ noinst_HEADERS = \
 	cabrillo_utils.h calledit.h callinput.h changefreq.h changepars.h \
 	change_rst.h checklogfile.h checkqtclogfile.h \
 	cleanup.h clear_display.h clusterinfo.h \
-	cqww_simulator.h \
 	deleteqso.h \
 	edit_last.h editlog.h  err_utils.h \
 	fldigixmlrpc.h freq_display.h focm.h \

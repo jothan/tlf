@@ -5,7 +5,6 @@
 #include "../src/sendspcall.h"
 #include "../src/tlf.h"
 #include "../src/globalvars.h"
-#include "../src/cqww_simulator.h"
 
 // OBJECT ../src/sendbuf.o
 // OBJECT ../src/sendspcall.o

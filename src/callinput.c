@@ -43,7 +43,6 @@
 #include "changepars.h"
 #include "clear_display.h"
 #include "cleanup.h"
-#include "cqww_simulator.h"
 #include "edit_last.h"
 #include "err_utils.h"
 #include "deleteqso.h"

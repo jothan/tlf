@@ -23,7 +23,6 @@
 /* export internal function */
 void checkexchange(struct qso_t *qso, bool interactive) {}
 int check_mult(struct qso_t *qso) { return -1; }
-void sendmessage(const char *msg) {}
 
 extern char countrylist[255][6];
 

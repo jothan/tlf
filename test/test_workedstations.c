@@ -11,7 +11,6 @@
 // OBJECT ../src/bands.o
 
 prefix_data pfx_dummy = { };
-void sendmessage(const char *msg) {}
 
 time_t get_time() {
     return (time_t)mock();

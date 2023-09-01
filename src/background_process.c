@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "background_process.h"
-#include "cqww_simulator.h"
 #include "err_utils.h"
 #include "fldigixmlrpc.h"
 #include "get_time.h"

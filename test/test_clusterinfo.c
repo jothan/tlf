@@ -46,7 +46,6 @@ int modify_attr(int attr) {
     return attr;
 }
 
-void sendmessage(const char *msg) {}
 
 /* setup/teardown */
 

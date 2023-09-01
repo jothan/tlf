@@ -3,7 +3,6 @@
 
 #include "../src/log_utils.h"
 #include "../src/globalvars.h"
-#include "../src/cqww_simulator.h"
 
 // OBJECT ../src/writecabrillo.o
 // OBJECT ../src/cabrillo_utils.o
@@ -20,7 +19,6 @@ void free_linedata(struct linedata_t *ptr);
 void free_cabfmt();
 void add_adif_field(char *adif_line, char *field, char *value);
 
-bool simulator = false;
 
 void nicebox();
 void add_to_keyer_terminal(char *buffer) {}

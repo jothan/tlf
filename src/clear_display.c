@@ -28,7 +28,6 @@
 #include <string.h>
 #include <glib.h>
 
-#include "cqww_simulator.h"
 #include "change_rst.h"
 #include "get_time.h"
 #include "getctydata.h"

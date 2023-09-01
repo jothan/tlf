@@ -19,7 +19,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("background_process.h")
         .header("splitscreen.h")
         .header("rtty.h")
-        .header("cqww_simulator.h")
         .header("gettxinfo.h")
         .header("set_tone.h")
         .header("sendqrg.h")

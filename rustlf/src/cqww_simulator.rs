@@ -1,5 +1,5 @@
-/// CW Simulator
-/// works only in RUN mode for CQWW contest
+//! CW Simulator
+//! works only in RUN mode for CQWW contest
 use cstr::cstr;
 use std::{
     cmp::min,
@@ -179,3 +179,8 @@ pub extern "C" fn simulator_send_final() {
 pub extern "C" fn simulator_send_repeat() {
     with_simulator(|sim| sim.send_repeat())
 }
+
+/// Simulator state owned by the UI frontend
+#[allow(non_upper_case_globals)]
+#[no_mangle]
+pub static mut simulator: bool = false;

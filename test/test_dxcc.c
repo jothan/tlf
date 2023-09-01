@@ -5,7 +5,6 @@
 
 
 extern prefix_data dummy_pfx;
-void sendmessage(const char *msg) {}
 
 const unsigned int bandcorner[NBANDS][2] = {
     { 1800000, 2000000 },	// band bottom, band top

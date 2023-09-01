@@ -13,7 +13,6 @@
 // OBJECT ../src/err_utils.o
 // OBJECT ../src/bands.o
 
-void sendmessage(const char *msg) {}
 
 extern char logfile[];
 
