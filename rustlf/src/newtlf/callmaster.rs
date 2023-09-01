@@ -4,15 +4,11 @@ use std::{
     fs::File,
     io::Read,
     ops::RangeFrom,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        OnceLock, RwLock,
-    },
+    sync::RwLock,
 };
 
 use libc::c_void;
 use linereader::LineReader;
-use rand::Rng;
 
 use crate::err_utils::{log_message, LogLevel};
 
@@ -84,9 +80,13 @@ impl CallMaster {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    pub fn as_inner(&self) -> &BTreeSet<CString> {
+        &self.0
+    }
 }
 
-static GLOBAL_CALLMASTER: RwLock<CallMaster> = RwLock::new(CallMaster(BTreeSet::new()));
+pub static GLOBAL_CALLMASTER: RwLock<CallMaster> = RwLock::new(CallMaster(BTreeSet::new()));
 
 #[no_mangle]
 pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: bool) -> usize {
@@ -154,45 +154,11 @@ pub unsafe extern "C" fn callmaster_version(buffer: *mut c_char) {
     let query = CString::new("VER").unwrap();
     let version = guard
         .starting_with(&query)
-        .filter(|c| c.as_bytes().len() == CALLMASTER_VERSION_LEN)
-        .next();
+        .find(|c| c.as_bytes().len() == CALLMASTER_VERSION_LEN);
 
     if let Some(version) = version {
         buffer.copy_from_nonoverlapping(version.as_ptr(), CALLMASTER_VERSION_LEN + 1);
     } else {
         buffer.write(0);
     }
-}
-
-static CALLMASTER_RANDOM_LIST: OnceLock<Vec<CString>> = OnceLock::new();
-static CALLMASTER_RANDOM_POSITION: AtomicUsize = AtomicUsize::new(0);
-
-#[no_mangle]
-pub extern "C" fn callmaster_pick_random() {
-    let list = CALLMASTER_RANDOM_LIST.get_or_init(|| {
-        GLOBAL_CALLMASTER
-            .read()
-            .unwrap()
-            .0
-            .iter()
-            .cloned()
-            .collect()
-    });
-
-    if list.is_empty() {
-        return;
-    }
-    CALLMASTER_RANDOM_POSITION.store(
-        rand::thread_rng().gen_range(0..list.len()),
-        Ordering::Release,
-    );
-}
-
-#[no_mangle]
-pub extern "C" fn callmaster_random_call() -> *const c_char {
-    CALLMASTER_RANDOM_LIST
-        .get()
-        .and_then(|list| list.get(CALLMASTER_RANDOM_POSITION.load(Ordering::Acquire)))
-        .map(|call| call.as_ptr())
-        .unwrap_or_else(std::ptr::null)
 }

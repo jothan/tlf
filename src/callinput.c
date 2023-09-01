@@ -584,7 +584,7 @@ int callinput(void) {
 			send_standard_message(0);	/* CQ */
 		    }
 
-		    set_simulator_state(CALL);
+		    simulator_send_call();
 
 		} else {
 
@@ -604,6 +604,7 @@ int callinput(void) {
 		} else {
 		    send_standard_message(x - KEY_F(1));
 		}
+                simulator_send_repeat();
 
 		break;
 	    }

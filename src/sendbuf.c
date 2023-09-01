@@ -310,10 +310,6 @@ void sendbuf(ExpandMacro_t expandMacro) {
 	    keyer_append(buffer);
 	}
 
-	if (simulator) {
-	    set_simulator_state(REPEAT);
-	}
-
 	buffer[0] = '\0';
     }
 }

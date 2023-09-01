@@ -28,6 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .header("gettxinfo.h")
         .header("bands.h")
         .header("callinput.h")
+        .header("sendbuf.h")
         .header("/usr/include/curses.h")
         .clang_args(includes)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))

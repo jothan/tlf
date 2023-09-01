@@ -46,6 +46,8 @@ int modify_attr(int attr) {
     return attr;
 }
 
+void sendmessage(const char *msg) {}
+
 /* setup/teardown */
 
 static void put_dx_line(char *p, int index) {

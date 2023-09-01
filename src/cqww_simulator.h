@@ -26,10 +26,4 @@
 
 extern bool simulator;
 
-typedef enum {IDLE, CALL, REPEAT, FINAL} simstate_t;
-
-simstate_t get_simulator_state();
-void set_simulator_state(simstate_t s);
-void cqww_simulator(void);
-
 #endif

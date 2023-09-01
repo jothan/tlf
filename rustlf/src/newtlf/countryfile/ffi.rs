@@ -11,14 +11,14 @@ use crate::err_utils::CResult;
 use super::{dummy_country, dummy_prefix, Country, DxccData, Prefix};
 
 // Safety: calling code expected to enforce synchronization
-struct GlobalDxccData(std::cell::UnsafeCell<Option<DxccData>>);
+pub(crate) struct GlobalDxccData(std::cell::UnsafeCell<Option<DxccData>>);
 
 unsafe impl Sync for GlobalDxccData {}
 
-static DXCC_DATA: GlobalDxccData = GlobalDxccData(UnsafeCell::new(None));
+pub(crate) static DXCC_DATA: GlobalDxccData = GlobalDxccData(UnsafeCell::new(None));
 
 impl GlobalDxccData {
-    unsafe fn get(&self) -> &DxccData {
+    pub(crate) unsafe fn get(&self) -> &DxccData {
         let inner = &mut *self.0.get();
         inner.as_ref().expect("GlobalDxccData not initialized")
     }

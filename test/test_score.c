@@ -36,6 +36,7 @@ struct qso_t qso = { };
 	g_free(qso.call); \
 	qso.call = NULL; }while(0)
 
+void sendmessage(const char *msg) {}
 
 #if 0
 void __wrap_qrb(char *x, char *y, char *u, char *v, double *a, double *b) {

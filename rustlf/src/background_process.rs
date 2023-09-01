@@ -6,6 +6,7 @@ use std::time::Duration;
 
 use cstr::cstr;
 
+use crate::cqww_simulator::CqwwSimulator;
 use crate::err_utils::{log_message, LogLevel};
 use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
 use crate::hamlib::Rig;
@@ -79,12 +80,13 @@ unsafe fn background_process(config: BackgroundConfig) {
         mut keyer_consumer,
         netkeyer,
         worker,
-        mut rig,
+        rig,
         fg_producer,
     } = config;
     FOREGROUND_HANDLE.with(|fg| *fg.borrow_mut() = Some(fg_producer));
 
     let netkeyer = (*netkeyer).as_ref();
+    let mut context = BackgroundContext { rig, simulator: CqwwSimulator::new() };
 
     let mut lantimesync: c_int = 0;
     let mut fldigi_rpc_cnt: bool = false;
@@ -95,7 +97,7 @@ unsafe fn background_process(config: BackgroundConfig) {
         }
 
         if worker
-            .process_sleep(&mut rig, Duration::from_millis(10))
+            .process_sleep(&mut context, Duration::from_millis(10))
             .is_err()
         {
             // Exit thread when disconnected.
@@ -118,7 +120,7 @@ unsafe fn background_process(config: BackgroundConfig) {
          *   fldigi_get_log_call() reads the callsign, if user clicks to a string in Fldigi's RX window
          *   fldigi_get_log_serial_number() reads the exchange
          */
-        if tlf::digikeyer == tlf::FLDIGI as _ && tlf::fldigi_isenabled() && rig.is_some() {
+        if tlf::digikeyer == tlf::FLDIGI as _ && tlf::fldigi_isenabled() && context.rig.is_some() {
             if fldigi_rpc_cnt {
                 tlf::fldigi_xmlrpc_get_carrier();
                 tlf::fldigi_get_log_call();
@@ -128,14 +130,13 @@ unsafe fn background_process(config: BackgroundConfig) {
         }
 
         if !is_background_process_stopped() {
-            tlf::cqww_simulator();
-            write_keyer(&mut keyer_consumer, rig.as_mut(), netkeyer);
+            write_keyer(&mut keyer_consumer, context.rig.as_mut(), netkeyer);
         }
 
         tlf::handle_lan_recv(&mut lantimesync);
 
         // get freq info from TRX
-        if let Some(rig) = rig.as_mut() {
+        if let Some(rig) = context.rig.as_mut() {
             let _ = rig.poll().map_err(|e| {
                 log_message!(LogLevel::WARN, format!("Problem reading radio status: {e}"));
             });
@@ -143,7 +144,10 @@ unsafe fn background_process(config: BackgroundConfig) {
     }
 }
 
-pub(crate) type BackgroundContext = Option<Rig>;
+pub(crate) struct BackgroundContext {
+    pub(crate) rig: Option<Rig>,
+    pub(crate) simulator: CqwwSimulator,
+}
 
 pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>(f: F) -> T {
     BACKGROUND_HANDLE.with(|bg| {

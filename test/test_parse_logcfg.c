@@ -122,6 +122,7 @@ void time_update(void) {
 void handle_logging(enum log_lvl lvl, ...) {
     // empty
 }
+void sendmessage(const char *msg) {}
 
 
 /* setup/teardown */

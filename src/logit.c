@@ -115,7 +115,7 @@ void logit(void) {
 			refreshp();
 		    }
 
-		    set_simulator_state(FINAL);
+		    simulator_send_final();
 
 		    if (CONTEST_IS(CQWW) || wazmult || itumult) {
 
@@ -170,7 +170,7 @@ void logit(void) {
 		    if (cqmode == CQ && iscontest) {
 			resend_callsign();
 			send_standard_message(CQ_TU_MSG);	/* send cq return */
-			set_simulator_state(CALL);
+			simulator_send_call();
 
 			defer_store = 0;
 

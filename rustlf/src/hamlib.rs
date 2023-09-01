@@ -459,7 +459,8 @@ impl Rig {
             with_foreground(|fg| {
                 fg.schedule_nowait(move |_| unsafe {
                     tlf::freq = 0.;
-                }).unwrap()
+                })
+                .unwrap()
             });
 
             return Err(Error::Poll);
@@ -624,8 +625,8 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
     }
 
     with_background(|bg| {
-        bg.schedule_nowait(move |rig| {
-            let rig = rig.as_mut().unwrap();
+        bg.schedule_nowait(move |ctx| {
+            let rig = ctx.rig.as_mut().unwrap();
             let _ = rig
                 .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
                 .map_err(print_error);
@@ -638,8 +639,8 @@ pub extern "C" fn set_outfreq(hertz: tlf::freq_t) {
 #[no_mangle]
 pub extern "C" fn set_outfreq_wait(hertz: tlf::freq_t) {
     with_background(|bg| {
-        bg.schedule_wait(move |rig| {
-            let rig = rig.as_mut().unwrap();
+        bg.schedule_wait(move |ctx| {
+            let rig = ctx.rig.as_mut().unwrap();
             let _ = rig
                 .set_freq(display_to_radio_frequency(hertz, rig.state.as_ref()))
                 .map_err(print_error);
@@ -661,12 +662,13 @@ fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
     let request: i32 = hertz as _;
 
     match request {
-        tlf::SETCWMODE => bg.schedule_nowait(|rig| {
-            let _ = rig.as_mut().unwrap().set_cw_mode().map_err(print_error);
+        tlf::SETCWMODE => bg.schedule_nowait(|ctx| {
+            let _ = ctx.rig.as_mut().unwrap().set_cw_mode().map_err(print_error);
         }),
 
-        tlf::SETSSBMODE => bg.schedule_nowait(move |rig| {
-            let _ = rig
+        tlf::SETSSBMODE => bg.schedule_nowait(move |ctx| {
+            let _ = ctx
+                .rig
                 .as_mut()
                 .unwrap()
                 .set_ssb_mode(hertz)
@@ -685,8 +687,9 @@ fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
                 }
             }
 
-            bg.schedule_nowait(move |rig| {
-                let _ = rig
+            bg.schedule_nowait(move |ctx| {
+                let _ = ctx
+                    .rig
                     .as_mut()
                     .unwrap()
                     .set_mode(mode, None)
@@ -694,8 +697,8 @@ fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
             })
         }
 
-        tlf::RESETRIT => bg.schedule_nowait(|rig| {
-            let _ = rig.as_mut().unwrap().reset_rit().map_err(print_error);
+        tlf::RESETRIT => bg.schedule_nowait(|ctx| {
+            let _ = ctx.rig.as_mut().unwrap().reset_rit().map_err(print_error);
         }),
 
         _ => panic!("Unknown set_outfreq request: {request}"),
@@ -706,7 +709,7 @@ fn outfreq_request(hertz: tlf::freq_t, bg: &WorkSender<BackgroundContext>) {
 #[no_mangle]
 pub extern "C" fn hamlib_keyer_set_speed(cwspeed: c_int) -> c_int {
     let set_result = with_background(|bg| {
-        bg.schedule_wait(move |rig| rig.as_mut().unwrap().set_keyer_speed(cwspeed as c_uint))
+        bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_speed(cwspeed as c_uint))
             .expect("background send error")
     });
     result_to_retval(set_result)
@@ -715,7 +718,7 @@ pub extern "C" fn hamlib_keyer_set_speed(cwspeed: c_int) -> c_int {
 #[no_mangle]
 pub unsafe extern "C" fn hamlib_keyer_stop() -> c_int {
     let stop_result = with_background(|bg| {
-        bg.schedule_wait(|rig| rig.as_mut().unwrap().stop_keyer())
+        bg.schedule_wait(|ctx| ctx.rig.as_mut().unwrap().stop_keyer())
             .expect("background send error")
     });
     result_to_retval(stop_result)
@@ -729,7 +732,7 @@ pub unsafe extern "C" fn hamlib_use_ptt() -> bool {
 #[no_mangle]
 pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
     let ptt_result = with_background(|bg| {
-        bg.schedule_wait(move |rig| rig.as_mut().unwrap().set_ptt(ptt))
+        bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_ptt(ptt))
             .expect("background send error")
     });
     result_to_retval(ptt_result)

@@ -49,23 +49,8 @@ int send_lan_message(int opcode, char *message) {
     return 0;
 }
 
-simstate_t get_simulator_state() {
-    return IDLE;
-}
-
-void set_simulator_state(simstate_t s) {
-}
-
 int modify_attr(int attr) { // FIXME: remove once info() moved to UI code
     return 0;
-}
-
-int getctynr(char *call) {
-    return 42;
-}
-
-const prefix_data *getctyinfo(char *call) {
-    return NULL;
 }
 
 /* some spies */

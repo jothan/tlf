@@ -394,8 +394,8 @@ int changepars(void) {
 		break;
 	    }
 
-	    if (!simulator) {
-
+	if (!simulator) {
+		simulator_enable();
 		simulator = true;
 		cqmode = CQ;
 		if (ctcomp) {
@@ -404,7 +404,6 @@ int changepars(void) {
 		    ctcomp = false;
 		} else {
 		    mvaddstr(13, 29, "Simulator on");
-		    callmaster_pick_random();
 		    refreshp();
 		    fg_sleep(1);
 		}
@@ -419,6 +418,7 @@ int changepars(void) {
 		}
 	    } else {
 		simulator = false;
+		simulator_disable();
 		mvaddstr(13, 29, "Simulator off");
 		refreshp();
 		fg_sleep(1);

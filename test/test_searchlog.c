@@ -66,6 +66,8 @@ int getctydata(char *checkcallptr) {
     return 0;
 }
 
+void sendmessage(const char *msg) {}
+
 contest_config_t config_focm;
 
 

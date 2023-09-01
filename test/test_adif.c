@@ -49,14 +49,6 @@ int send_lan_message(int opcode, char *message) {
     return 0;
 }
 
-simstate_t get_simulator_state() {
-    return IDLE;
-}
-
-void set_simulator_state(simstate_t s) {
-}
-
-
 char *error_details;
 
 contest_config_t empty = { .exchange_width = 10 };

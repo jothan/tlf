@@ -33,6 +33,7 @@ int check_mult(struct qso_t *qso) { return -1; }
 int pacc_pa(void) {
     return 0;
 }
+void sendmessage(const char *msg) {}
 
 extern int excl_add_veto2;
 
