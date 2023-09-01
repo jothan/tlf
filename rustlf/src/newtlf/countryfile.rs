@@ -265,6 +265,11 @@ impl PrefixData {
         (idx, check_call)
     }
 
+    pub fn call_prefix(&self, call: &str) -> Option<&Prefix> {
+        let (idx, _) = self.getpfxindex(call);
+        idx.and_then(|idx| self.get(idx))
+    }
+
     pub fn clear(&mut self) {
         self.prefixes.clear();
         self.prefix_map.clear();
@@ -343,6 +348,13 @@ impl DxccData {
         self.prefixes
             .push_parsed(&prefix_line, last_country, country_idx);
         Ok(())
+    }
+
+    pub fn call_info(&self, call: &str) -> (Option<&Prefix>, Option<&Country>) {
+        let prefix = self.prefixes.call_prefix(call);
+        let country = prefix.and_then(|prefix| self.countries.get(prefix.country_idx));
+
+        (prefix, country)
     }
 }
 

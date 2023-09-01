@@ -12,7 +12,7 @@ use rand::{seq::SliceRandom, Rng};
 use crate::{
     background_process::{is_background_process_stopped, with_background},
     netkeyer::write_tone,
-    newtlf::countryfile::ffi::DXCC_DATA,
+    newtlf::countryfile::{ffi::DXCC_DATA, CqZone},
 };
 
 static CALLMASTER_RANDOM_LIST: OnceLock<Vec<CString>> = OnceLock::new();
@@ -24,6 +24,7 @@ pub struct CqwwSimulator {
     tone: c_int,
     tonecpy: Option<c_int>,
     current_call: Option<&'static CStr>,
+    current_zone: CqZone,
     repeat_count: usize,
 }
 
@@ -40,6 +41,7 @@ impl CqwwSimulator {
             tone: CW_TONES[0],
             tonecpy: None,
             current_call: None,
+            current_zone: CqZone(0),
             repeat_count: 0,
         }
     }
@@ -66,6 +68,10 @@ impl CqwwSimulator {
     fn pick_call(&mut self) {
         let list = CALLMASTER_RANDOM_LIST.get().unwrap();
         self.current_call = list.choose(&mut rand::thread_rng()).map(AsRef::as_ref);
+        let ctydata = unsafe { DXCC_DATA.get() };
+        let call = self.current_call.unwrap();
+        let prefix = ctydata.prefixes.call_prefix(call.to_str().unwrap());
+        self.current_zone = prefix.map(|prefix| prefix.cq_zone).unwrap_or(CqZone(0));
     }
 
     fn set_tone(&mut self) {
@@ -82,6 +88,10 @@ impl CqwwSimulator {
     }
 
     pub fn send_call(&mut self) {
+        if !self.precondition() {
+            return;
+        }
+
         // First QSO step
         self.tone = CW_TONES.choose(&mut rand::thread_rng()).copied().unwrap();
         self.set_tone();
@@ -93,13 +103,12 @@ impl CqwwSimulator {
     }
 
     pub fn send_final(&mut self) {
-        self.set_tone();
-        let ctydata = unsafe { DXCC_DATA.get() };
-        let call = self.current_call.unwrap();
-        let (i, _) = ctydata.prefixes.getpfxindex(call.to_str().unwrap());
-        let pdata = ctydata.prefixes.get(i.unwrap()).unwrap();
+        if !self.precondition() {
+            return;
+        }
 
-        let zone: u8 = pdata.cq_zone.into();
+        self.set_tone();
+        let zone: u8 = self.current_zone.into();
         let mut zone_str = format!("{zone:02}");
 
         // Use short numbers randomly
@@ -114,6 +123,9 @@ impl CqwwSimulator {
     }
 
     pub fn send_repeat(&mut self) {
+        if !self.precondition() || self.current_call.is_none() {
+            return;
+        }
         self.set_tone();
         // God save the poor soul who overflows this.
         self.repeat_count = self.repeat_count.saturating_add(1);
@@ -155,27 +167,15 @@ pub extern "C" fn simulator_disable() {
 
 #[no_mangle]
 pub extern "C" fn simulator_send_call() {
-    with_simulator(|sim| {
-        if sim.precondition() {
-            sim.send_call();
-        }
-    })
+    with_simulator(|sim| sim.send_call())
 }
 
 #[no_mangle]
 pub extern "C" fn simulator_send_final() {
-    with_simulator(|sim| {
-        if sim.precondition() {
-            sim.send_final();
-        }
-    })
+    with_simulator(|sim| sim.send_final())
 }
 
 #[no_mangle]
 pub extern "C" fn simulator_send_repeat() {
-    with_simulator(|sim| {
-        if sim.precondition() {
-            sim.send_repeat();
-        }
-    })
+    with_simulator(|sim| sim.send_repeat())
 }
