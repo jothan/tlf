@@ -44,8 +44,6 @@ void qtc_main_panel(int direction) {}
 void rst_recv_up() {}
 void rst_recv_down() {}
 void stoptx() {}
-void speedup() {}
-void speeddown() {}
 void vk_play_file() {}
 int recall_exchange(void) { return 0; }
 int send_lan_message(int opcode, char *message) { return 0; }

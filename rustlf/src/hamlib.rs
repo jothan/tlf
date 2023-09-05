@@ -17,6 +17,8 @@ use crate::{
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
     foreground::with_foreground,
+    keyer_interface::{CwKeyerFrontend, CwKeyerBackend},
+    netkeyer::KeyerError,
     workqueue::WorkSender,
 };
 
@@ -716,15 +718,6 @@ pub extern "C" fn hamlib_keyer_set_speed(cwspeed: c_int) -> c_int {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn hamlib_keyer_stop() -> c_int {
-    let stop_result = with_background(|bg| {
-        bg.schedule_wait(|ctx| ctx.rig.as_mut().unwrap().stop_keyer())
-            .expect("background send error")
-    });
-    result_to_retval(stop_result)
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn hamlib_use_ptt() -> bool {
     USE_PTT.load(Ordering::SeqCst)
 }
@@ -741,4 +734,41 @@ pub unsafe extern "C" fn hamlib_set_ptt(ptt: bool) -> c_int {
 fn print_error(e: GenericError) -> GenericError {
     log_message!(LogLevel::WARN, format!("Problem with rig link: {e}"));
     e
+}
+
+pub struct HamlibKeyer;
+
+impl CwKeyerFrontend for HamlibKeyer {
+    fn name(&self) -> &'static str {
+        "Hamlib"
+    }
+
+    fn set_speed(&mut self, speed: c_uint) -> Result<(), KeyerError> {
+        with_background(|bg| {
+            bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_speed(speed))
+                .expect("background send error")
+        })
+        .map_err(|_| KeyerError::InvalidDevice)
+    }
+
+    fn stop_keying(&mut self) -> Result<(), KeyerError> {
+        with_background(|bg| {
+            bg.schedule_wait(|ctx| ctx.rig.as_mut().unwrap().stop_keyer())
+                .expect("background send error")
+        })
+        .map_err(|_| KeyerError::InvalidDevice)
+    }
+
+}
+
+impl CwKeyerBackend for Rig {
+    fn prepare_message(&self, msg: &mut Vec<u8>) {
+        // Filter out unsupported speed directives
+        msg.retain(|c| *c != b'+' && *c != b'-');
+    }
+
+    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), KeyerError> {
+        let msg = CString::new(msg).unwrap();
+        self.keyer_send(msg).map_err(|_| KeyerError::InvalidDevice)
+    }
 }

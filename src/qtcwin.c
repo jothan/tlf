@@ -41,7 +41,6 @@
 #include "qtcvars.h"		// Includes globalvars.h
 #include "rtty.h"
 #include "sendbuf.h"
-#include "speedupndown.h"
 #include "time_update.h"
 #include "tlf_panel.h"
 #include "ui_utils.h"

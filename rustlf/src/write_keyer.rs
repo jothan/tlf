@@ -1,4 +1,8 @@
+use core::panic;
+use std::ffi::c_uint;
+
 use std::os::unix::ffi::OsStrExt;
+use std::sync::Arc;
 use std::{
     borrow::Cow,
     ffi::{c_char, CStr, CString, OsStr},
@@ -11,8 +15,10 @@ use std::{
 
 use bbqueue::{BBBuffer, Consumer, Producer};
 
-use crate::err_utils::{log_message, switch_to_ssb, LogLevel};
+use crate::err_utils::{log_message, LogLevel};
 use crate::hamlib::Rig;
+use crate::keyer_interface::CwKeyerBackend;
+use crate::mfj1278::Mfj1278Keyer;
 use crate::netkeyer::Netkeyer;
 
 const KEYER_QUEUE_SIZE: usize = 400;
@@ -89,7 +95,7 @@ fn combine_segments<'a>((left, right): (&'a [u8], &'a [u8])) -> Cow<'a, [u8]> {
 pub(crate) fn write_keyer(
     consumer: &mut KeyerConsumer,
     rig: Option<&mut Rig>,
-    netkeyer: Option<&Netkeyer>,
+    netkeyer: Option<&mut Arc<Netkeyer>>,
 ) {
     let trxmode = unsafe { tlf::trxmode } as u32;
     if trxmode != tlf::CWMODE && trxmode != tlf::DIGIMODE {
@@ -118,63 +124,66 @@ pub(crate) fn write_keyer(
     keyer_dispatch(data, rig, netkeyer);
 }
 
+fn choose_keyer<'a, 'b: 'a>(
+    rig: Option<&'b mut Rig>,
+    netkeyer: Option<&'b mut Arc<Netkeyer>>,
+    mfj: &'b mut Mfj1278Keyer,
+) -> &'a mut dyn CwKeyerBackend {
+    match unsafe { tlf::cwkeyer } as c_uint {
+        tlf::HAMLIB_KEYER => rig.expect("no rig when needed"),
+        tlf::NET_KEYER => netkeyer.expect("no netkeyer when needed"),
+        tlf::MFJ1278_KEYER => mfj,
+        _ => panic!("Invalid CW keyer"),
+    }
+}
+
 #[inline]
-fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&Netkeyer>) {
+fn keyer_dispatch(data: CString, rig: Option<&mut Rig>, netkeyer: Option<&mut Arc<Netkeyer>>) {
     let trxmode = unsafe { tlf::trxmode } as u32;
-    let cwkeyer = unsafe { tlf::cwkeyer } as u32;
     let digikeyer = unsafe { tlf::digikeyer } as u32;
 
-    if digikeyer == tlf::FLDIGI && trxmode == tlf::DIGIMODE {
-        unsafe { tlf::fldigi_send_text(data.as_ptr()) };
-    } else if let Some(netkeyer) = netkeyer {
-        netkeyer
-            .send_text(data.as_bytes())
-            .expect("netkeyer send error");
-    } else if cwkeyer == tlf::HAMLIB_KEYER {
-        let mut data_bytes = data.into_bytes_with_nul();
-        // Filter out unsupported speed directives
-        data_bytes.retain(|c| *c != b'+' && *c != b'-');
-        let data = CStr::from_bytes_with_nul(&data_bytes).unwrap();
+    if trxmode == tlf::CWMODE {
+        let mut mfj = Mfj1278Keyer;
+        let keyer = choose_keyer(rig, netkeyer, &mut mfj);
+        let mut data = data.into_bytes();
+        keyer.prepare_message(&mut data);
 
-        let rig = rig.expect("no rig when needed");
-        if let Err(e) = rig.keyer_send(data) {
-            log_message!(LogLevel::WARN, format!("CW send error: {e}"));
+        if keyer.send_message(data).is_err() {
+            log_message!(LogLevel::INFO, "CW send error");
         }
-    } else if cwkeyer == tlf::MFJ1278_KEYER || digikeyer == tlf::MFJ1278_KEYER {
-        let path = unsafe { CStr::from_ptr(&tlf::controllerport as *const i8) }.to_string_lossy();
-        let file_open = std::fs::File::options()
-            .append(true)
-            .create(false)
-            .open(path.as_ref());
-        match file_open {
-            Ok(mut file) => {
-                // FIXME: should this be silent ?
-                let _ = file.write_all(data.as_bytes());
+    } else if trxmode == tlf::DIGIMODE {
+        match digikeyer {
+            tlf::FLDIGI => {
+                unsafe { tlf::fldigi_send_text(data.as_ptr()) };
             }
-            Err(_) => switch_to_ssb(),
-        }
-    } else if digikeyer == tlf::GMFSK {
-        let path = unsafe { CStr::from_ptr(&tlf::rttyoutput as *const i8) };
-        let path = OsStr::from_bytes(path.to_bytes());
+            tlf::MFJ1278_KEYER => {
+                let _ = Mfj1278Keyer.send_message(data.into_bytes());
+            }
+            tlf::GMFSK => {
+                let path = unsafe { CStr::from_ptr(&tlf::rttyoutput as *const i8) };
+                let path = OsStr::from_bytes(path.to_bytes());
 
-        if path.is_empty() {
-            log_message!(LogLevel::WARN, "No modem file specified!");
-        }
+                if path.is_empty() {
+                    log_message!(LogLevel::WARN, "No modem file specified!");
+                }
 
-        let mut data_bytes = data.into_bytes();
-        if data_bytes.last() == Some(&b'\n') {
-            data_bytes.pop();
-        }
-        data_bytes.insert(0, b'\n');
+                let mut data_bytes = data.into_bytes();
+                if data_bytes.last() == Some(&b'\n') {
+                    data_bytes.pop();
+                }
+                data_bytes.insert(0, b'\n');
 
-        // FIXME: original code seems to want to fire this asynchronously and forget about it.
-        let file_open = std::fs::File::options()
-            .append(true)
-            .create(false)
-            .open(path);
+                // FIXME: original code seems to want to fire this asynchronously and forget about it.
+                let file_open = std::fs::File::options()
+                    .append(true)
+                    .create(false)
+                    .open(path);
 
-        if let Ok(mut file) = file_open {
-            let _ = file.write_all(&data_bytes);
+                if let Ok(mut file) = file_open {
+                    let _ = file.write_all(&data_bytes);
+                }
+            }
+            _ => panic!("Invalid digi keyer"),
         }
     }
 }

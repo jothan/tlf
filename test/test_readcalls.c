@@ -64,8 +64,6 @@ void qtc_main_panel(int direction) {}
 void add_local_spot() {}
 void sendmessage(const char *msg) {}
 void printcall(const char *msg) {}
-int speedup() { return 12; }
-int speeddown() { return 8; }
 void rst_recv_up() {}
 void rst_recv_down() {}
 void vk_play_file(char *audiofile) {}

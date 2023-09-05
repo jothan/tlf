@@ -29,8 +29,7 @@ pub extern "C" fn SetCWSpeed(wpm: c_uint) {
     SPEED.store(speed_conversion(wpm), Ordering::SeqCst)
 }
 
-#[no_mangle]
-pub extern "C" fn DecreaseCWSpeed() {
+pub(crate) fn decrease_cw_speed() {
     SPEED
         .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |speed| {
             Some(speed.saturating_sub(1))
@@ -38,8 +37,7 @@ pub extern "C" fn DecreaseCWSpeed() {
         .unwrap();
 }
 
-#[no_mangle]
-pub extern "C" fn IncreaseCWSpeed() {
+pub(crate) fn increase_cw_speed() {
     SPEED
         .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |speed| {
             Some(min(speed + 1, SPEEDS.len() - 1))

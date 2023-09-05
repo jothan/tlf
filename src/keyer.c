@@ -34,7 +34,6 @@
 #include "keystroke_names.h"
 #include "nicebox.h"		// Includes curses.h
 #include "sendbuf.h"
-#include "speedupndown.h"
 #include "stoptx.h"
 #include "tlf.h"
 #include "tlf_panel.h"
@@ -220,7 +219,7 @@ void keyer(void) {
 		    noecho();
 
 		    weight = atoi(weightbuf);
-		    netkeyer_set_weight(weight);
+		    setweight(weight);
 		    break;
 		}
 

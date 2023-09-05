@@ -38,23 +38,7 @@ int stoptx(void) {
     if (digikeyer == FLDIGI && trxmode == DIGIMODE) {
 	fldigi_to_rx();
     } else if (trxmode == CWMODE) {
-	if (cwkeyer == NET_KEYER) {
-
-	    if (netkeyer_abort() < 0) {
-
-		TLF_LOG_WARN("keyer not active; switching to SSB");
-		trxmode = SSBMODE;
-		clear_display();
-
-	    }
-	} else if (cwkeyer == HAMLIB_KEYER) {
-
-	    int error = hamlib_keyer_stop();
-	    if (error != RIG_OK) {
-		TLF_LOG_WARN("CW stop error: %s", rigerror(error));
-
-	    }
-	}
+        stoptx_cw();
     } else if (trxmode == SSBMODE) {
 	vk_stop();
 	return 0;

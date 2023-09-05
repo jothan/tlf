@@ -3,7 +3,7 @@ use std::{ffi::{c_char, c_void, CStr, CString}, sync::Arc};
 use crate::{netkeyer::{NETKEYER, Netkeyer}, foreground::BACKGROUND_HANDLE, workqueue::WorkSender, background_process::BackgroundContext};
 
 struct PlaySoundConfig {
-    pub(crate) netkeyer: Arc<Option<Netkeyer>>,
+    pub(crate) netkeyer: Option<Arc<Netkeyer>>,
     pub(crate) bg_thread: Option<WorkSender<BackgroundContext>>,
     pub(crate) audiofile: CString,
 }

@@ -25,11 +25,11 @@ thiserror = "1.0.37"
 oneshot = "0.1"
 libc = "0.2"
 cstr = "0.2"
-flume="0.10"
+flume="0.11"
 rayon="1.7"
 nom="7.1"
 linereader="0.4"
 rand="0.8"
 
 [build-dependencies]
-cbindgen = "0.24.3"
+cbindgen = "0.25"

@@ -50,7 +50,6 @@
 #include "searchlog.h"		// Includes glib.h
 #include "sendbuf.h"
 #include "setcontest.h"
-#include "speedupndown.h"
 #include "stoptx.h"
 #include "time_update.h"
 #include "tlf_curses.h"

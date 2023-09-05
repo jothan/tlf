@@ -69,7 +69,7 @@ fn background_process_wait() -> bool {
 
 pub(crate) struct BackgroundConfig {
     pub(crate) keyer_consumer: KeyerConsumer,
-    pub(crate) netkeyer: Arc<Option<Netkeyer>>,
+    pub(crate) netkeyer: Option<Arc<Netkeyer>>,
     pub(crate) worker: Worker<BackgroundContext>,
     pub(crate) fg_producer: WorkSender<ForegroundContext>,
     pub(crate) rig: Option<Rig>,
@@ -78,14 +78,13 @@ pub(crate) struct BackgroundConfig {
 unsafe fn background_process(config: BackgroundConfig) {
     let BackgroundConfig {
         mut keyer_consumer,
-        netkeyer,
+        mut netkeyer,
         worker,
         rig,
         fg_producer,
     } = config;
     FOREGROUND_HANDLE.with(|fg| *fg.borrow_mut() = Some(fg_producer));
 
-    let netkeyer = (*netkeyer).as_ref();
     let mut context = BackgroundContext { rig, simulator: CqwwSimulator::new() };
 
     let mut lantimesync: c_int = 0;
@@ -130,7 +129,7 @@ unsafe fn background_process(config: BackgroundConfig) {
         }
 
         if !is_background_process_stopped() {
-            write_keyer(&mut keyer_consumer, context.rig.as_mut(), netkeyer);
+            write_keyer(&mut keyer_consumer, context.rig.as_mut(), netkeyer.as_mut());
         }
 
         tlf::handle_lan_recv(&mut lantimesync);

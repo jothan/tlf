@@ -9,9 +9,10 @@ use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
 use crate::err_utils::CResult;
+use crate::keyer_interface::{CwKeyerBackend, CwKeyerFrontend};
 
 thread_local! {
-    pub(crate) static NETKEYER: RefCell<Arc<Option<Netkeyer>>> = RefCell::new(Arc::new(None));
+    pub(crate) static NETKEYER: RefCell<Option<Arc<Netkeyer>>> = RefCell::new(None);
 }
 
 // Could be owned by the main thread if the simulator did not set it.
@@ -23,7 +24,7 @@ pub(crate) struct Netkeyer {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum KeyerError {
+pub enum KeyerError {
     #[error("IO")]
     IO(#[from] std::io::Error),
     #[error("Invalid parameter supplied")]
@@ -321,7 +322,7 @@ pub extern "C" fn get_tone() -> c_int {
 pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
     let prev_tone = TONE.swap(tone, Ordering::SeqCst);
     NETKEYER.with(|netkeyer| {
-        if let Some(ref netkeyer) = **netkeyer.borrow() {
+        if let Some(ref netkeyer) = *netkeyer.borrow() {
             netkeyer.write_tone(tone).expect("netkeyer send error");
         }
         // Ignore this call if netkeyer not initialized
@@ -331,28 +332,8 @@ pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
 }
 
 #[no_mangle]
-pub extern "C" fn netkeyer_set_speed(speed: c_uint) -> CResult {
-    with_netkeyer(|netkeyer| {
-        speed
-            .try_into()
-            .ok()
-            .and_then(|speed| netkeyer.set_speed(speed).ok())
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn netkeyer_set_ptt(ptt: bool) -> CResult {
     with_netkeyer(|netkeyer| netkeyer.set_ptt(ptt))
-}
-
-#[no_mangle]
-pub extern "C" fn netkeyer_set_weight(speed: c_int) -> CResult {
-    with_netkeyer(|netkeyer| {
-        speed
-            .try_into()
-            .ok()
-            .and_then(|speed| netkeyer.set_weight(speed).ok())
-    })
 }
 
 #[no_mangle]
@@ -407,10 +388,50 @@ pub extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult {
 
 fn with_netkeyer<R: Into<CResult>, F: FnOnce(&Netkeyer) -> R>(f: F) -> CResult {
     NETKEYER.with(|netkeyer| {
-        if let Some(ref netkeyer) = **netkeyer.borrow() {
+        if let Some(ref netkeyer) = *netkeyer.borrow() {
             f(netkeyer).into()
         } else {
             CResult::Err
         }
     })
+}
+
+pub struct NetKeyerFrontend(Arc<Netkeyer>);
+
+impl NetKeyerFrontend {
+    pub(crate) fn new(netkeyer: Arc<Netkeyer>) -> NetKeyerFrontend {
+        NetKeyerFrontend(netkeyer)
+    }
+}
+
+impl CwKeyerFrontend for NetKeyerFrontend {
+    fn name(&self) -> &'static str {
+        "cwdaemon"
+    }
+
+    fn set_speed(&mut self, speed: c_uint) -> Result<(), KeyerError> {
+        let speed = speed.try_into().map_err(|_| KeyerError::InvalidParameter)?;
+        self.0.set_speed(speed)
+    }
+
+    fn set_weight(&mut self, weight: c_int) -> Result<(), KeyerError> {
+        let weight = weight
+            .try_into()
+            .map_err(|_| KeyerError::InvalidParameter)?;
+        self.0.set_weight(weight)
+    }
+
+    fn stop_keying(&mut self) -> Result<(), KeyerError> {
+        self.0.abort()
+    }
+
+    fn reset(&mut self) -> Result<(), KeyerError> {
+        self.0.reset()
+    }
+}
+
+impl CwKeyerBackend for Arc<Netkeyer> {
+    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), KeyerError> {
+        self.send_text(&msg)
+    }
 }

@@ -68,7 +68,6 @@
 #include "showinfo.h"
 #include "showpxmap.h"
 #include "showscore.h"
-#include "speedupndown.h"
 #include "splitscreen.h"
 #include "stoptx.h"
 #include "time_update.h"
@@ -379,10 +378,9 @@ int callinput(void) {
 		if ((weightbuf[0] != '\0') && (*end == '\0')) {
 		    /* successful conversion */
 
-		    if (tmp > -51 && tmp < 51) {
-			weight = tmp;
-			netkeyer_set_weight(weight);
-		    }
+                    if (setweight(tmp) == 0) {
+                        weight = tmp;
+                    }
 		}
 		clear_display();
 
