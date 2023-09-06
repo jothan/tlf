@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use flume::{bounded, Receiver, RecvError, RecvTimeoutError, Selector, Sender, unbounded};
+use flume::{bounded, unbounded, Receiver, RecvError, RecvTimeoutError, Selector, Sender};
 use oneshot;
 
 type WorkItem<C> = Box<dyn FnOnce(&mut C) + Send + 'static>;
@@ -136,4 +136,20 @@ pub(crate) fn workqueue<C: ?Sized>(size: Option<usize>) -> (WorkSender<C>, Worke
     }
 
     (WorkSender { handle: tx }, Worker { handle: rx })
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct NoWaitWorkSender<'a, C>(&'a WorkSender<C>);
+
+impl<'a, C> NoWaitWorkSender<'a, C> {
+    pub fn new(ws: &'a WorkSender<C>) -> NoWaitWorkSender<'a, C> {
+        NoWaitWorkSender(ws)
+    }
+
+    pub fn schedule_nowait<W: FnOnce(&mut C) + Send + 'static>(
+        self,
+        work: W,
+    ) -> Result<(), crate::workqueue::Error> {
+        self.0.schedule_nowait(work)
+    }
 }

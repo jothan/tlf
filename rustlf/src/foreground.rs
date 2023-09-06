@@ -9,7 +9,7 @@ use crate::hamlib::{set_outfreq, Error, HamlibKeyer, Rig, RigConfig};
 use crate::keyer_interface::{CwKeyerFrontend, NullKeyer};
 use crate::mfj1278::Mfj1278Keyer;
 use crate::netkeyer::{NetKeyerFrontend, Netkeyer, NETKEYER};
-use crate::workqueue::{workqueue, WorkSender, Worker};
+use crate::workqueue::{workqueue, NoWaitWorkSender, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
 
 const BACKGROUND_QUEUE_SIZE: Option<usize> = Some(16);
@@ -237,10 +237,11 @@ pub(crate) fn in_foreground() -> bool {
     FOREGROUND_WORKER.with(|fg| fg.borrow().is_some())
 }
 
-pub(crate) fn with_foreground<F: FnOnce(&WorkSender<ForegroundContext>) -> T, T>(f: F) -> T {
-    FOREGROUND_HANDLE.with(|fg| {
-        let fg = fg.borrow();
-        let fg = fg.as_ref().expect("called from wrong thread");
+pub(crate) fn with_foreground<F: FnOnce(NoWaitWorkSender<'_, ForegroundContext>) -> T, T>(
+    f: F,
+) -> T {
+    FOREGROUND_HANDLE.with_borrow(|fg| {
+        let fg = NoWaitWorkSender::new(fg.as_ref().expect("called from wrong thread"));
         f(fg)
     })
 }
