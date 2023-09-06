@@ -12,8 +12,8 @@ use crate::netkeyer::{NetKeyerFrontend, Netkeyer, NETKEYER};
 use crate::workqueue::{workqueue, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
 
-const BACKGROUND_QUEUE_SIZE: usize = 16;
-const FOREGROUND_QUEUE_SIZE: usize = 16;
+const BACKGROUND_QUEUE_SIZE: Option<usize> = Some(16);
+const FOREGROUND_QUEUE_SIZE: Option<usize> = None;
 
 pub(crate) type ForegroundContext = ();
 

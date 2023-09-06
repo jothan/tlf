@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use flume::{bounded, Receiver, RecvError, RecvTimeoutError, Selector, Sender};
+use flume::{bounded, Receiver, RecvError, RecvTimeoutError, Selector, Sender, unbounded};
 use oneshot;
 
 type WorkItem<C> = Box<dyn FnOnce(&mut C) + Send + 'static>;
@@ -126,8 +126,14 @@ impl<C: ?Sized> Worker<C> {
     }
 }
 
-pub(crate) fn workqueue<C: ?Sized>(size: usize) -> (WorkSender<C>, Worker<C>) {
-    let (tx, rx) = bounded(size);
+pub(crate) fn workqueue<C: ?Sized>(size: Option<usize>) -> (WorkSender<C>, Worker<C>) {
+    let (tx, rx);
+
+    if let Some(size) = size {
+        (tx, rx) = bounded(size);
+    } else {
+        (tx, rx) = unbounded();
+    }
 
     (WorkSender { handle: tx }, Worker { handle: rx })
 }
