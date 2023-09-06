@@ -59,7 +59,7 @@ void ask(char *buffer, char *what) {
     move(15, 1);
 
     echo();
-    getnstr(buffer, 78);
+    getnstr_process(buffer, 78);
     noecho();
     g_strstrip(buffer);
 }

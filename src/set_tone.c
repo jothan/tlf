@@ -43,7 +43,7 @@ void set_tone(void) {
     mvaddstr(5, 41, "      ");
     move(5, 42);
     echo();
-    getnstr(tonestr, 3);
+    getnstr_process(tonestr, 3);
     noecho();
     tonestr[3] = '\0';
 

@@ -73,7 +73,7 @@ static freq_t ask_frequency() {
 
     mvaddstr(13, 20, "freq. (kHz): ");
     echo();
-    getnstr(frequency, 7);
+    getnstr_process(frequency, 7);
     noecho();
     return atof(frequency) * 1000.0;
 }

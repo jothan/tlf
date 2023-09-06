@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::ffi::{c_int, c_uint, c_ulong, c_void};
+use std::ffi::{c_char, c_int, c_uint, c_ulong, c_void};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -183,10 +183,12 @@ pub extern "C" fn getch_process() -> c_int {
         c
     })
 }
+
+struct AssertSend<T>(T);
+unsafe impl<T> Send for AssertSend<T> {}
+
 #[no_mangle]
 pub extern "C" fn wgetch_process(w: *mut tlf::WINDOW) -> c_int {
-    struct AssertSend(*mut tlf::WINDOW);
-    unsafe impl Send for AssertSend {}
     let w = AssertSend(w);
 
     FOREGROUND_WORKER.with(|fg| {
@@ -197,6 +199,23 @@ pub extern "C" fn wgetch_process(w: *mut tlf::WINDOW) -> c_int {
             #[allow(clippy::redundant_locals)]
             let w = w;
             tlf::wgetch(w.0)
+        });
+
+        if let Some(err) = err {
+            panic!("Recv error: {:?}", err);
+        }
+        c
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn getnstr_process(buffer: *mut c_char, n: c_int) -> c_int {
+    let buffer = AssertSend(buffer);
+    FOREGROUND_WORKER.with_borrow(|fg| {
+        let fg = fg.as_ref().unwrap();
+        let (c, err) = fg.process_blocking(&mut (), || {
+            let buffer = buffer;
+            unsafe { tlf::getnstr(buffer.0, n) }
         });
 
         if let Some(err) = err {

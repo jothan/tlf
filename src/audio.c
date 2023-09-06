@@ -229,7 +229,7 @@ void record(void) {
 		refreshp();
 
 		echo();
-		getnstr(playbackfile, 8);
+		getnstr_process(playbackfile, 8);
 		noecho();
 
 		char *command = prepare_playback_command(playbackfile);

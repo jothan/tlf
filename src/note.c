@@ -51,7 +51,7 @@ void include_note(void) {
     move(15, 1);
 
     echo();
-    getnstr(buffer, 78);
+    getnstr_process(buffer, 78);
     noecho();
 
     if (lan_active) {

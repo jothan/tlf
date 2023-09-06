@@ -54,7 +54,7 @@ static void enter_message(int bufnr) {
     move(16, 4);
 
     echo();
-    getnstr(printbuf, 60);
+    getnstr_process(printbuf, 60);
     noecho();
 
     if (printbuf[0] == ESCAPE) {

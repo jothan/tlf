@@ -336,7 +336,7 @@ void talk(void) {
     mvaddstr(LINES - 1, 0, "T>");
     refreshp();
     echo();
-    getnstr(talkline, 60);
+    getnstr_process(talkline, 60);
     noecho();
 
     strcat(talkline, "\n");

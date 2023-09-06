@@ -215,7 +215,7 @@ void keyer(void) {
 		    refreshp();
 		    move(1, 7);
 		    echo();
-		    getnstr(weightbuf, 2);
+		    getnstr_process(weightbuf, 2);
 		    noecho();
 
 		    weight = atoi(weightbuf);
