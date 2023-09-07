@@ -15,8 +15,9 @@ thread_local! {
     pub(crate) static NETKEYER: RefCell<Option<Arc<Netkeyer>>> = RefCell::new(None);
 }
 
+const DEFAULT_TONE: u16 = 600;
 // Could be owned by the main thread if the simulator did not set it.
-static TONE: AtomicI32 = AtomicI32::new(600);
+static TONE: AtomicU16 = AtomicU16::new(DEFAULT_TONE);
 
 pub(crate) struct Netkeyer {
     socket: UdpSocket,
@@ -128,9 +129,7 @@ impl Netkeyer {
         Ok(netkeyer)
     }
 
-    pub(crate) fn write_tone(&self, tone: i32) -> Result<(), KeyerError> {
-        let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
-
+    pub(crate) fn write_tone(&self, tone: u16) -> Result<(), KeyerError> {
         self.set_tone(tone)?;
 
         if tone != 0 {
@@ -305,24 +304,23 @@ impl Netkeyer {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn parse_tone(tonestr: *const c_char) -> c_int {
+pub unsafe extern "C" fn parse_tone(tonestr: *const c_char) -> u16 {
     CStr::from_ptr(tonestr)
         .to_str()
         .ok()
         .map(str::trim)
-        .and_then(|t| t.parse::<c_int>().ok())
-        .filter(|tone| *tone >= 0)
-        .unwrap_or(-1)
+        .and_then(|t| t.parse::<u16>().ok())
+        .unwrap_or(DEFAULT_TONE)
 }
 
 #[no_mangle]
-pub extern "C" fn init_tone(tone: c_int) {
-    TONE.store(tone, Ordering::SeqCst)
+pub extern "C" fn init_tone(tone: u16) {
+    TONE.store(tone, Ordering::Release);
 }
 
 #[no_mangle]
-pub extern "C" fn get_tone() -> c_int {
-    TONE.load(Ordering::SeqCst)
+pub extern "C" fn get_tone() -> u16 {
+    TONE.load(Ordering::Acquire)
 }
 
 #[no_mangle]

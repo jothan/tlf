@@ -17,12 +17,12 @@ use crate::{
 
 static CALLMASTER_RANDOM_LIST: OnceLock<Vec<CString>> = OnceLock::new();
 
-const CW_TONES: [c_int; 10] = [625, 800, 650, 750, 700, 725, 675, 775, 600, 640];
+const CW_TONES: [u16; 10] = [625, 800, 650, 750, 700, 725, 675, 775, 600, 640];
 
 pub struct CqwwSimulator {
     enabled: bool,
-    tone: c_int,
-    tonecpy: Option<c_int>,
+    tone: u16,
+    tonecpy: Option<u16>,
     current_call: Option<&'static CStr>,
     current_zone: CqZone,
     repeat_count: usize,
