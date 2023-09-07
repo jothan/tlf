@@ -321,7 +321,7 @@ pub extern "C" fn get_tone() -> u16 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn write_tone(tone: u16) -> u16 {
+pub extern "C" fn write_tone(tone: u16) -> u16 {
     let prev_tone = TONE.swap(tone, Ordering::AcqRel);
 
     exec_foreground(move || {

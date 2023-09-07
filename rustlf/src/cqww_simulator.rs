@@ -76,14 +76,14 @@ impl CqwwSimulator {
 
     fn set_tone(&mut self) {
         // TODO: see if write_tone entry point can be removed.
-        self.tonecpy = Some(unsafe { write_tone(self.tone) });
+        self.tonecpy = Some(write_tone(self.tone));
 
         unsafe { tlf::sendmessage(cstr!("  ").as_ptr()) };
     }
 
     fn restore_tone(&mut self) {
         if let Some(tonecpy) = self.tonecpy {
-            unsafe { write_tone(tonecpy) };
+            write_tone(tonecpy);
         }
     }
 
