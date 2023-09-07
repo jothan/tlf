@@ -13,6 +13,7 @@ pub const RIG_ENIMPL: c_int = rig_errcode_e_RIG_ENIMPL as c_int;
 pub const RIG_ENAVAIL: c_int = rig_errcode_e_RIG_ENAVAIL as c_int;
 
 pub const RIG_VFO_CURR: c_uint = 1 << 29;
+pub const RIG_LEVEL_CWPITCH: c_ulong = 1 << 11;
 pub const RIG_LEVEL_KEYSPD: c_ulong = 1 << 14;
 pub const RIG_PASSBAND_NORMAL: shortfreq_t = 0;
 pub const RIG_PASSBAND_NOCHANGE: shortfreq_t = -1;

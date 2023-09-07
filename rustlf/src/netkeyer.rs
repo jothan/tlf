@@ -4,12 +4,13 @@ use std::io::{Cursor, Write};
 use std::net::{
     Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs, UdpSocket,
 };
-use std::sync::atomic::{AtomicI32, AtomicI8, Ordering};
+use std::sync::atomic::{AtomicI8, AtomicU16, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
-use crate::err_utils::CResult;
-use crate::keyer_interface::{CwKeyerBackend, CwKeyerFrontend};
+use crate::err_utils::{log_message, CResult};
+use crate::foreground::exec_foreground;
+use crate::keyer_interface::{with_keyer_interface, CwKeyerBackend, CwKeyerFrontend};
 
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Option<Arc<Netkeyer>>> = RefCell::new(None);
@@ -33,10 +34,6 @@ pub enum KeyerError {
     InvalidParameter,
     #[error("Invalid device")]
     InvalidDevice,
-}
-
-pub(crate) trait TextKeyer: Send {
-    fn send_text(&mut self, text: &[u8]);
 }
 
 const ESC: u8 = 0x1b;
@@ -324,13 +321,18 @@ pub extern "C" fn get_tone() -> u16 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
-    let prev_tone = TONE.swap(tone, Ordering::SeqCst);
-    NETKEYER.with_borrow(|netkeyer| {
-        if let Some(netkeyer) = netkeyer {
-            netkeyer.write_tone(tone).expect("netkeyer send error");
-        }
-        // Ignore this call if netkeyer not initialized
+pub unsafe extern "C" fn write_tone(tone: u16) -> u16 {
+    let prev_tone = TONE.swap(tone, Ordering::AcqRel);
+
+    exec_foreground(move || {
+        with_keyer_interface(|keyer| {
+            if let Err(e) = keyer.set_tone(tone) {
+                log_message!(
+                    crate::err_utils::LogLevel::INFO,
+                    format!("Could not set tone: {e:?}")
+                )
+            }
+        });
     });
 
     prev_tone
@@ -349,11 +351,6 @@ pub extern "C" fn netkeyer_abort() -> CResult {
 #[no_mangle]
 pub extern "C" fn netkeyer_set_pin14(pin14: bool) -> CResult {
     with_netkeyer(|netkeyer| netkeyer.set_pin14(pin14))
-}
-
-#[no_mangle]
-pub extern "C" fn netkeyer_reset() -> CResult {
-    with_netkeyer(|netkeyer| netkeyer.reset())
 }
 
 #[no_mangle]
@@ -424,6 +421,10 @@ impl CwKeyerFrontend for NetKeyerFrontend {
             .try_into()
             .map_err(|_| KeyerError::InvalidParameter)?;
         self.0.set_weight(weight)
+    }
+
+    fn set_tone(&mut self, tone: u16) -> Result<(), KeyerError> {
+        self.0.write_tone(tone)
     }
 
     fn stop_keying(&mut self) -> Result<(), KeyerError> {

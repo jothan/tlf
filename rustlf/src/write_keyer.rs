@@ -124,10 +124,10 @@ pub(crate) fn write_keyer(
     keyer_dispatch(data, rig, netkeyer);
 }
 
-fn choose_keyer<'a, 'b: 'a>(
-    rig: Option<&'b mut Rig>,
-    netkeyer: Option<&'b mut Arc<Netkeyer>>,
-    mfj: &'b mut Mfj1278Keyer,
+fn choose_keyer<'a>(
+    rig: Option<&'a mut Rig>,
+    netkeyer: Option<&'a mut Arc<Netkeyer>>,
+    mfj: &'a mut Mfj1278Keyer,
 ) -> &'a mut dyn CwKeyerBackend {
     match unsafe { tlf::cwkeyer } as c_uint {
         tlf::HAMLIB_KEYER => rig.expect("no rig when needed"),

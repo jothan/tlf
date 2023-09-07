@@ -44,10 +44,10 @@ pub fn log_message_string(level: LogLevel, message: impl Into<String>) {
 
 macro_rules! log_message {
     ($level:expr,$msg:literal) => {
-        $crate::err_utils::log_message_raw($level, cstr::cstr!($msg));
+        $crate::err_utils::log_message_raw($level, cstr::cstr!($msg))
     };
     ($level:expr,$msg:expr) => {
-        $crate::err_utils::log_message_string($level, $msg);
+        $crate::err_utils::log_message_string($level, $msg)
     };
 }
 

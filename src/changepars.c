@@ -421,15 +421,7 @@ int changepars(void) {
 		mvaddstr(13, 29, "Simulator off");
 		refreshp();
 		fg_sleep(1);
-
-		if (cwkeyer == NET_KEYER) {
-
-		    if (netkeyer_reset() < 0) {
-			TLF_LOG_INFO("keyer not active; switching to SSB");
-			trxmode = SSBMODE;
-			clear_display();
-		    }
-		}
+                cwkeyer_reset();
 	    }
 	    break;
 	}

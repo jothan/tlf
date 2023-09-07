@@ -1,6 +1,14 @@
-use std::{ffi::{c_char, c_void, CStr, CString}, sync::Arc};
+use std::{
+    ffi::{c_char, c_void, CStr, CString},
+    sync::Arc,
+};
 
-use crate::{netkeyer::{NETKEYER, Netkeyer}, foreground::BACKGROUND_HANDLE, workqueue::WorkSender, background_process::BackgroundContext};
+use crate::{
+    background_process::BackgroundContext,
+    foreground::BACKGROUND_HANDLE,
+    netkeyer::{Netkeyer, NETKEYER},
+    workqueue::WorkSender,
+};
 
 struct PlaySoundConfig {
     pub(crate) netkeyer: Option<Arc<Netkeyer>>,

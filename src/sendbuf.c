@@ -299,13 +299,6 @@ void sendbuf(ExpandMacro_t expandMacro) {
 	    keyer_append(buffer);
 	}
 	if (trxmode == CWMODE) {
-
-	    if (cwkeyer == MFJ1278_KEYER) {
-		int i = 0;
-		for (i = 0; i < strlen(buffer); i++)
-		    if (buffer[i] == '\n')
-			buffer[i] = RETURN;
-	    }
 	    keyer_append(buffer);
 	}
 

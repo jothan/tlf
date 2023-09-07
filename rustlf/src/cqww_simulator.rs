@@ -3,7 +3,7 @@
 use cstr::cstr;
 use std::{
     cmp::min,
-    ffi::{c_int, CStr, CString},
+    ffi::{CStr, CString},
     sync::OnceLock,
 };
 

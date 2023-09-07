@@ -17,7 +17,7 @@ use crate::{
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
     foreground::with_foreground,
-    keyer_interface::{CwKeyerFrontend, CwKeyerBackend},
+    keyer_interface::{CwKeyerBackend, CwKeyerFrontend},
     netkeyer::KeyerError,
     workqueue::WorkSender,
 };
@@ -324,6 +324,20 @@ impl Rig {
                 self.handle.as_mut(),
                 tlf::RIG_VFO_CURR,
                 tlf::RIG_LEVEL_KEYSPD,
+                value,
+            )
+        };
+        retval_to_result(retval)
+    }
+
+    fn set_keyer_tone(&mut self, tone: u16) -> Result<(), GenericError> {
+        let value = tlf::value_t { i: tone as c_int };
+
+        let retval = unsafe {
+            tlf::rig_set_level(
+                self.handle.as_mut(),
+                tlf::RIG_VFO_CURR,
+                tlf::RIG_LEVEL_CWPITCH,
                 value,
             )
         };
@@ -746,6 +760,14 @@ impl CwKeyerFrontend for HamlibKeyer {
     fn set_speed(&mut self, speed: c_uint) -> Result<(), KeyerError> {
         with_background(|bg| {
             bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_speed(speed))
+                .expect("background send error")
+        })
+        .map_err(|_| KeyerError::InvalidDevice)
+    }
+
+    fn set_tone(&mut self, tone: u16) -> Result<(), KeyerError> {
+        with_background(|bg| {
+            bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_tone(tone))
                 .expect("background send error")
         })
         .map_err(|_| KeyerError::InvalidDevice)

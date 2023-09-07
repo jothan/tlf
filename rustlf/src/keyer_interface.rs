@@ -19,6 +19,10 @@ pub trait CwKeyerFrontend {
         Ok(())
     }
 
+    fn set_tone(&mut self, _tone: u16) -> Result<(), KeyerError> {
+        Ok(())
+    }
+
     fn stop_keying(&mut self) -> Result<(), KeyerError> {
         Ok(())
     }
@@ -100,6 +104,17 @@ pub extern "C" fn setweight(weight: c_int) -> CResult {
 #[no_mangle]
 pub extern "C" fn stoptx_cw() {
     with_keyer_interface(|keyer| match keyer.stop_keying() {
+        Ok(_) => {}
+        Err(_) => {
+            switch_to_ssb();
+            unsafe { tlf::clear_display() };
+        }
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn cwkeyer_reset() {
+    with_keyer_interface(|keyer| match keyer.reset() {
         Ok(_) => {}
         Err(_) => {
             switch_to_ssb();

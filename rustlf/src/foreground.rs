@@ -212,6 +212,7 @@ pub unsafe extern "C" fn getnstr_process(buffer: *mut c_char, n: c_int) -> c_int
     FOREGROUND_WORKER.with_borrow(|fg| {
         let fg = fg.as_ref().unwrap();
         let (c, err) = fg.process_blocking(&mut (), || {
+            #[allow(clippy::redundant_locals)]
             let buffer = buffer;
             unsafe { tlf::getnstr(buffer.0, n) }
         });
