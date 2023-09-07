@@ -10,8 +10,8 @@ struct PlaySoundConfig {
 
 #[no_mangle]
 pub unsafe extern "C" fn prepare_playsound(audiofile: *const c_char) -> *mut c_void {
-    let netkeyer = NETKEYER.with(|fg_netkeyer| fg_netkeyer.borrow().clone());
-    let bg_thread = BACKGROUND_HANDLE.with(|bg_thread| bg_thread.borrow().clone());
+    let netkeyer = NETKEYER.with_borrow(|fg_netkeyer| fg_netkeyer.clone());
+    let bg_thread = BACKGROUND_HANDLE.with_borrow(|bg_thread| bg_thread.clone());
 
     let audiofile = CStr::from_ptr(audiofile).to_owned();
     fn assert_send<T: Send>() {}
@@ -36,8 +36,8 @@ pub unsafe extern "C" fn init_playsound(config: *mut c_void) -> *mut c_char {
         bg_thread,
         audiofile,
     } = *Box::from_raw(config as *mut PlaySoundConfig);
-    NETKEYER.with(|audio_netkeyer| *audio_netkeyer.borrow_mut() = netkeyer);
-    BACKGROUND_HANDLE.with(|audio_bg| *audio_bg.borrow_mut() = bg_thread);
+    NETKEYER.with_borrow_mut(|audio_netkeyer| *audio_netkeyer = netkeyer);
+    BACKGROUND_HANDLE.with_borrow_mut(|audio_bg| *audio_bg = bg_thread);
 
     audiofile.into_raw()
 }

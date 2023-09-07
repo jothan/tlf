@@ -83,7 +83,7 @@ unsafe fn background_process(config: BackgroundConfig) {
         rig,
         fg_producer,
     } = config;
-    FOREGROUND_HANDLE.with(|fg| *fg.borrow_mut() = Some(fg_producer));
+    FOREGROUND_HANDLE.with_borrow_mut(|fg| *fg = Some(fg_producer));
 
     let mut context = BackgroundContext { rig, simulator: CqwwSimulator::new() };
 
@@ -149,8 +149,7 @@ pub(crate) struct BackgroundContext {
 }
 
 pub(crate) fn with_background<F: FnOnce(&WorkSender<BackgroundContext>) -> T, T>(f: F) -> T {
-    BACKGROUND_HANDLE.with(|bg| {
-        let bg = bg.borrow();
+    BACKGROUND_HANDLE.with_borrow(|bg| {
         let bg = bg.as_ref().expect("called from wrong thread");
         f(bg)
     })

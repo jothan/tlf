@@ -28,8 +28,8 @@ thread_local! {
 pub extern "C" fn foreground_init() -> *mut c_void {
     let (bg_producer, bg_worker) = workqueue::<BackgroundContext>(BACKGROUND_QUEUE_SIZE);
     let (fg_producer, fg_worker) = workqueue::<ForegroundContext>(FOREGROUND_QUEUE_SIZE);
-    BACKGROUND_HANDLE.with(|bg| *bg.borrow_mut() = Some(bg_producer));
-    FOREGROUND_WORKER.with(|bg| *bg.borrow_mut() = Some(fg_worker));
+    BACKGROUND_HANDLE.with_borrow_mut(|bg| *bg = Some(bg_producer));
+    FOREGROUND_WORKER.with_borrow_mut(|bg| *bg = Some(fg_worker));
 
     let rig = unsafe { hamlib_init().ok() };
 
@@ -37,8 +37,8 @@ pub extern "C" fn foreground_init() -> *mut c_void {
 
     let (keyer_interface, netkeyer) = unsafe { keyer_init(&rig) };
 
-    KEYER_INTERFACE.with(|keyer| *keyer.borrow_mut() = Some(keyer_interface));
-    NETKEYER.with(|fg_netkeyer| *fg_netkeyer.borrow_mut() = netkeyer.clone());
+    KEYER_INTERFACE.with_borrow_mut(|keyer| *keyer = Some(keyer_interface));
+    NETKEYER.with_borrow_mut(|fg_netkeyer| *fg_netkeyer = netkeyer.clone());
 
     fn assert_send<T: Send>() {}
     let _ = assert_send::<BackgroundConfig>;
@@ -150,8 +150,8 @@ unsafe fn keyer_init(rig: &Option<Rig>) -> (Box<dyn CwKeyerFrontend>, Option<Arc
 
 #[inline]
 fn fg_sleep_inner(delay: Duration) {
-    FOREGROUND_WORKER.with(|fg| {
-        if let Some(ref fg) = *fg.borrow() {
+    FOREGROUND_WORKER.with_borrow(|fg| {
+        if let Some(fg) = fg {
             fg.process_sleep(&mut (), delay)
                 .expect("fg worker receive problem");
         } else {
@@ -172,8 +172,7 @@ pub extern "C" fn fg_sleep(secs: c_uint) {
 
 #[no_mangle]
 pub extern "C" fn getch_process() -> c_int {
-    FOREGROUND_WORKER.with(|fg| {
-        let fg = fg.borrow();
+    FOREGROUND_WORKER.with_borrow(|fg| {
         let fg = fg.as_ref().unwrap();
         let (c, err) = fg.process_blocking(&mut (), || unsafe { tlf::getch() });
 
@@ -191,8 +190,7 @@ unsafe impl<T> Send for AssertSend<T> {}
 pub extern "C" fn wgetch_process(w: *mut tlf::WINDOW) -> c_int {
     let w = AssertSend(w);
 
-    FOREGROUND_WORKER.with(|fg| {
-        let fg = fg.borrow();
+    FOREGROUND_WORKER.with_borrow(|fg| {
         let fg = fg.as_ref().unwrap();
         let (c, err) = fg.process_blocking(&mut (), || unsafe {
             // Clippy FP, does not want to move w otherwise.
@@ -234,7 +232,7 @@ pub(crate) fn exec_foreground<F: FnOnce() + Send + 'static>(f: F) {
 }
 
 pub(crate) fn in_foreground() -> bool {
-    FOREGROUND_WORKER.with(|fg| fg.borrow().is_some())
+    FOREGROUND_WORKER.with_borrow(|fg| fg.is_some())
 }
 
 pub(crate) fn with_foreground<F: FnOnce(NoWaitWorkSender<'_, ForegroundContext>) -> T, T>(

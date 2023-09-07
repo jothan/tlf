@@ -46,9 +46,8 @@ pub trait CwKeyerBackend {
     }
 }
 
-fn with_keyer_interface<R, F: FnOnce(&mut dyn CwKeyerFrontend) -> R>(f: F) -> R {
-    KEYER_INTERFACE.with(|keyer| {
-        let mut keyer = keyer.borrow_mut();
+pub(crate) fn with_keyer_interface<R, F: FnOnce(&mut dyn CwKeyerFrontend) -> R>(f: F) -> R {
+    KEYER_INTERFACE.with_borrow_mut(|keyer| {
         let keyer = keyer.as_mut().expect("called keyer from the wrong thread");
         f(keyer.deref_mut())
     })

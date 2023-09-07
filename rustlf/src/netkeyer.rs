@@ -321,8 +321,8 @@ pub extern "C" fn get_tone() -> c_int {
 #[no_mangle]
 pub unsafe extern "C" fn write_tone(tone: c_int) -> c_int {
     let prev_tone = TONE.swap(tone, Ordering::SeqCst);
-    NETKEYER.with(|netkeyer| {
-        if let Some(ref netkeyer) = *netkeyer.borrow() {
+    NETKEYER.with_borrow(|netkeyer| {
+        if let Some(netkeyer) = netkeyer {
             netkeyer.write_tone(tone).expect("netkeyer send error");
         }
         // Ignore this call if netkeyer not initialized
@@ -387,8 +387,8 @@ pub extern "C" fn netkeyer_set_sidetone_volume(volume: c_uint) -> CResult {
 }
 
 fn with_netkeyer<R: Into<CResult>, F: FnOnce(&Netkeyer) -> R>(f: F) -> CResult {
-    NETKEYER.with(|netkeyer| {
-        if let Some(ref netkeyer) = *netkeyer.borrow() {
+    NETKEYER.with_borrow(|netkeyer| {
+        if let Some(netkeyer) = netkeyer {
             f(netkeyer).into()
         } else {
             CResult::Err

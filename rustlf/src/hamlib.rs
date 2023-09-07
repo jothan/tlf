@@ -758,7 +758,6 @@ impl CwKeyerFrontend for HamlibKeyer {
         })
         .map_err(|_| KeyerError::InvalidDevice)
     }
-
 }
 
 impl CwKeyerBackend for Rig {

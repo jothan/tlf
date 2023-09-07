@@ -7,12 +7,12 @@ thread_local! {
 
 #[no_mangle]
 pub unsafe extern "C" fn fldigi_var_shift_freq_get() -> c_int {
-    VAR_SHIFT_FREQ.with(|f| f.get())
+    VAR_SHIFT_FREQ.get()
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn fldigi_var_shift_freq_set(freq: c_int) {
-    VAR_SHIFT_FREQ.with(|f| f.set(freq))
+    VAR_SHIFT_FREQ.set(freq)
 }
 
 pub(crate) fn get_shifted_freq(
@@ -21,7 +21,7 @@ pub(crate) fn get_shifted_freq(
     if mode != Some(tlf::RIG_MODE_RTTY) && mode != Some(tlf::RIG_MODE_RTTYR) {
         return None;
     }
-    let shift = VAR_SHIFT_FREQ.with(|f| f.take());
+    let shift = VAR_SHIFT_FREQ.take();
     if shift == 0 {
         return None;
     }
