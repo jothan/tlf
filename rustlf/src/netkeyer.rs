@@ -4,7 +4,7 @@ use std::io::{Cursor, Write};
 use std::net::{
     Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs, UdpSocket,
 };
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicI8, Ordering};
 use std::sync::Arc;
 
 use crate::cw_utils::GetCWSpeed;
@@ -21,6 +21,7 @@ static TONE: AtomicI32 = AtomicI32::new(600);
 pub(crate) struct Netkeyer {
     socket: UdpSocket,
     dest_addr: SocketAddr,
+    sc_volume: AtomicI8,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -75,7 +76,11 @@ impl Netkeyer {
 
         let socket = UdpSocket::bind(bind_addr)?;
 
-        Ok(Netkeyer { socket, dest_addr })
+        Ok(Netkeyer {
+            socket,
+            dest_addr,
+            sc_volume: AtomicI8::new(-1),
+        })
     }
 
     pub(crate) fn from_host_and_port(host: &str, port: u16) -> Result<Netkeyer, KeyerError> {
@@ -123,7 +128,7 @@ impl Netkeyer {
         Ok(netkeyer)
     }
 
-    pub(crate) unsafe fn write_tone(&self, tone: i32) -> Result<(), KeyerError> {
+    pub(crate) fn write_tone(&self, tone: i32) -> Result<(), KeyerError> {
         let tone = tone.try_into().map_err(|_| KeyerError::InvalidParameter)?;
 
         self.set_tone(tone)?;
@@ -136,7 +141,7 @@ impl Netkeyer {
              * So... to be sure we set the volume back to our chosen value
              * or to 70% (like cwdaemon) if no volume got specified
              */
-            let sc_volume: u8 = Some(tlf::sc_volume)
+            let sc_volume: u8 = Some(self.sc_volume.load(Ordering::Acquire))
                 .and_then(|v| v.try_into().ok())
                 .unwrap_or(70);
             self.set_sidetone_volume(sc_volume)?;
@@ -276,6 +281,8 @@ impl Netkeyer {
     }
 
     pub(crate) fn set_sidetone_volume(&self, volume: u8) -> Result<(), KeyerError> {
+        self.sc_volume
+            .store(volume.try_into().ok().unwrap_or(-1), Ordering::Release);
         let mut buf = make_buf::<6>();
 
         if volume > 100 {
