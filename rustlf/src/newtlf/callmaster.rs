@@ -1,9 +1,10 @@
 use std::{
     collections::BTreeSet,
-    ffi::{c_char, CStr, CString},
+    ffi::{c_char, CStr, CString, OsStr},
     fs::File,
     io::Read,
     ops::RangeFrom,
+    os::unix::prelude::OsStrExt,
     sync::RwLock,
 };
 
@@ -90,9 +91,10 @@ pub static GLOBAL_CALLMASTER: RwLock<CallMaster> = RwLock::new(CallMaster(BTreeS
 
 #[no_mangle]
 pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: bool) -> usize {
-    let path = CStr::from_ptr(path).to_string_lossy();
+    let path = CStr::from_ptr(path);
+    let path = OsStr::from_bytes(path.to_bytes());
 
-    let file = if let Ok(file) = File::open(&*path) {
+    let file = if let Ok(file) = File::open(path) {
         file
     } else {
         log_message!(LogLevel::WARN, "Error opening callmaster file.");
