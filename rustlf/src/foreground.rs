@@ -8,7 +8,8 @@ use crate::err_utils::{showmsg, shownr};
 use crate::hamlib::{set_outfreq, Error, HamlibKeyer, Rig, RigConfig};
 use crate::keyer_interface::{CwKeyerFrontend, NullKeyer};
 use crate::mfj1278::Mfj1278Keyer;
-use crate::netkeyer::{NetKeyerFrontend, Netkeyer, NETKEYER};
+use crate::netkeyer::{netkeyer_from_globals, NetKeyerFrontend, NETKEYER};
+use crate::newtlf::netkeyer::Netkeyer;
 use crate::workqueue::{workqueue, NoWaitWorkSender, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
 
@@ -99,7 +100,7 @@ unsafe fn keyer_init(rig: &Option<Rig>) -> (Box<dyn CwKeyerFrontend>, Option<Arc
             (tlf::NET_KEYER, _) => {
                 showmsg!("CW-Keyer is cwdaemon");
                 let netkeyer_raw =
-                    Arc::new(unsafe { Netkeyer::from_globals() }.expect("netkeyer init error"));
+                    Arc::new(unsafe { netkeyer_from_globals() }.expect("netkeyer init error"));
                 netkeyer = Some(netkeyer_raw.clone());
 
                 Box::new(NetKeyerFrontend::new(netkeyer_raw))
@@ -214,7 +215,7 @@ pub unsafe extern "C" fn getnstr_process(buffer: *mut c_char, n: c_int) -> c_int
         let (c, err) = fg.process_blocking(&mut (), || {
             #[allow(clippy::redundant_locals)]
             let buffer = buffer;
-            unsafe { tlf::getnstr(buffer.0, n) }
+            tlf::getnstr(buffer.0, n)
         });
 
         if let Some(err) = err {

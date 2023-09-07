@@ -6,7 +6,8 @@ use std::{
 use crate::{
     background_process::BackgroundContext,
     foreground::BACKGROUND_HANDLE,
-    netkeyer::{Netkeyer, NETKEYER},
+    netkeyer::NETKEYER,
+    newtlf::netkeyer::Netkeyer,
     workqueue::WorkSender,
 };
 

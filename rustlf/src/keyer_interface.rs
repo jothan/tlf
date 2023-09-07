@@ -7,27 +7,27 @@ use crate::{
     cw_utils::{decrease_cw_speed, increase_cw_speed, GetCWSpeed},
     err_utils::{self, log_message, switch_to_ssb, CResult},
     foreground::KEYER_INTERFACE,
-    netkeyer::KeyerError,
+    newtlf::netkeyer::Error,
 };
 
 pub trait CwKeyerFrontend {
-    fn set_speed(&mut self, _speed: c_uint) -> Result<(), KeyerError> {
+    fn set_speed(&mut self, _speed: c_uint) -> Result<(), Error> {
         Ok(())
     }
 
-    fn set_weight(&mut self, _weight: c_int) -> Result<(), KeyerError> {
+    fn set_weight(&mut self, _weight: c_int) -> Result<(), Error> {
         Ok(())
     }
 
-    fn set_tone(&mut self, _tone: u16) -> Result<(), KeyerError> {
+    fn set_tone(&mut self, _tone: u16) -> Result<(), Error> {
         Ok(())
     }
 
-    fn stop_keying(&mut self) -> Result<(), KeyerError> {
+    fn stop_keying(&mut self) -> Result<(), Error> {
         Ok(())
     }
 
-    fn reset(&mut self) -> Result<(), KeyerError> {
+    fn reset(&mut self) -> Result<(), Error> {
         Ok(())
     }
 
@@ -45,7 +45,7 @@ impl CwKeyerFrontend for NullKeyer {
 pub trait CwKeyerBackend {
     fn prepare_message(&self, _msg: &mut Vec<u8>) {}
 
-    fn send_message(&mut self, _msg: Vec<u8>) -> Result<(), KeyerError> {
+    fn send_message(&mut self, _msg: Vec<u8>) -> Result<(), Error> {
         Ok(())
     }
 }

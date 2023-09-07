@@ -10,7 +10,7 @@ use crate::cqww_simulator::CqwwSimulator;
 use crate::err_utils::{log_message, LogLevel};
 use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
 use crate::hamlib::Rig;
-use crate::netkeyer::Netkeyer;
+use crate::newtlf::netkeyer::Netkeyer;
 use crate::workqueue::{WorkSender, Worker};
 use crate::write_keyer::{write_keyer, KeyerConsumer};
 

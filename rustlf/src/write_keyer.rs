@@ -19,7 +19,7 @@ use crate::err_utils::{log_message, LogLevel};
 use crate::hamlib::Rig;
 use crate::keyer_interface::CwKeyerBackend;
 use crate::mfj1278::Mfj1278Keyer;
-use crate::netkeyer::Netkeyer;
+use crate::newtlf::netkeyer::Netkeyer;
 
 const KEYER_QUEUE_SIZE: usize = 400;
 

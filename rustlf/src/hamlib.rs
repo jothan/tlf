@@ -18,7 +18,7 @@ use crate::{
     err_utils::{log_message, showmsg, shownr, LogLevel},
     foreground::with_foreground,
     keyer_interface::{CwKeyerBackend, CwKeyerFrontend},
-    netkeyer::KeyerError,
+    newtlf::netkeyer,
     workqueue::WorkSender,
 };
 
@@ -757,28 +757,28 @@ impl CwKeyerFrontend for HamlibKeyer {
         "Hamlib"
     }
 
-    fn set_speed(&mut self, speed: c_uint) -> Result<(), KeyerError> {
+    fn set_speed(&mut self, speed: c_uint) -> Result<(), netkeyer::Error> {
         with_background(|bg| {
             bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_speed(speed))
                 .expect("background send error")
         })
-        .map_err(|_| KeyerError::InvalidDevice)
+        .map_err(|_| netkeyer::Error::InvalidDevice)
     }
 
-    fn set_tone(&mut self, tone: u16) -> Result<(), KeyerError> {
+    fn set_tone(&mut self, tone: u16) -> Result<(), netkeyer::Error> {
         with_background(|bg| {
             bg.schedule_wait(move |ctx| ctx.rig.as_mut().unwrap().set_keyer_tone(tone))
                 .expect("background send error")
         })
-        .map_err(|_| KeyerError::InvalidDevice)
+        .map_err(|_| netkeyer::Error::InvalidDevice)
     }
 
-    fn stop_keying(&mut self) -> Result<(), KeyerError> {
+    fn stop_keying(&mut self) -> Result<(), netkeyer::Error> {
         with_background(|bg| {
             bg.schedule_wait(|ctx| ctx.rig.as_mut().unwrap().stop_keyer())
                 .expect("background send error")
         })
-        .map_err(|_| KeyerError::InvalidDevice)
+        .map_err(|_| netkeyer::Error::InvalidDevice)
     }
 }
 
@@ -788,8 +788,9 @@ impl CwKeyerBackend for Rig {
         msg.retain(|c| *c != b'+' && *c != b'-');
     }
 
-    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), KeyerError> {
+    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), netkeyer::Error> {
         let msg = CString::new(msg).unwrap();
-        self.keyer_send(msg).map_err(|_| KeyerError::InvalidDevice)
+        self.keyer_send(msg)
+            .map_err(|_| netkeyer::Error::InvalidDevice)
     }
 }

@@ -8,7 +8,7 @@ use crate::{
     err_utils::switch_to_ssb,
     foreground::fg_usleep,
     keyer_interface::{CwKeyerBackend, CwKeyerFrontend},
-    netkeyer::KeyerError,
+    newtlf::netkeyer::Error,
 };
 use cstr::cstr;
 
@@ -19,7 +19,7 @@ impl CwKeyerFrontend for Mfj1278Keyer {
         "MFJ 1278"
     }
 
-    fn set_speed(&mut self, speed: c_uint) -> Result<(), crate::netkeyer::KeyerError> {
+    fn set_speed(&mut self, speed: c_uint) -> Result<(), Error> {
         unsafe { tlf::sendmessage(cstr!("\\\x0d").as_ptr()) };
         fg_usleep(500000);
 
@@ -34,7 +34,7 @@ impl CwKeyerFrontend for Mfj1278Keyer {
 }
 
 impl CwKeyerBackend for Mfj1278Keyer {
-    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), KeyerError> {
+    fn send_message(&mut self, msg: Vec<u8>) -> Result<(), Error> {
         let path = unsafe { CStr::from_ptr(&tlf::controllerport as *const i8) };
         let path = OsStr::from_bytes(path.to_bytes());
         let file_open = std::fs::File::options()
