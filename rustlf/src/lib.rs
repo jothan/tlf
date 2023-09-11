@@ -8,7 +8,6 @@ pub mod bands;
 pub mod cqww_simulator;
 mod cw_utils;
 pub mod err_utils;
-pub mod ffi;
 pub mod fldigi;
 mod foreground;
 mod hamlib;

@@ -1,12 +1,10 @@
 use std::{
     cell::UnsafeCell,
-    ffi::{c_char, CStr, CString},
+    ffi::{c_char, c_int, CStr, CString},
     fs::File,
     str::Utf8Error,
     sync::OnceLock,
 };
-
-use crate::err_utils::CResult;
 
 use super::{dummy_country, dummy_prefix, Country, DxccData, Prefix};
 
@@ -247,15 +245,18 @@ pub unsafe extern "C" fn prefix_add(line: *const c_char) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn load_ctydata(path: *const c_char) -> CResult {
+pub unsafe extern "C" fn load_ctydata(path: *const c_char) -> c_int {
     let dd = unsafe { DXCC_DATA.get_mut() };
     let path = unsafe { ptr_to_str(path).map_err(|_| std::io::ErrorKind::InvalidData.into()) };
 
-    path.and_then(File::open)
+    match path
+        .and_then(File::open)
         .and_then(DxccData::load::<std::io::Error, _>)
-        .map(|data| {
+    {
+        Ok(data) => {
             *dd = data;
-            Ok::<_, std::io::Error>(())
-        })
-        .into()
+            0
+        }
+        Err(_) => -1,
+    }
 }

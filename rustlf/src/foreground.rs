@@ -1,14 +1,17 @@
 use std::cell::RefCell;
-use std::ffi::{c_char, c_int, c_uint, c_ulong, c_void};
+use std::ffi::{c_char, c_int, c_uint, c_ulong, c_void, CStr, OsStr};
+use std::fs::File;
+use std::os::unix::prelude::OsStrExt;
 use std::sync::Arc;
 use std::time::Duration;
 
 use crate::background_process::BackgroundContext;
-use crate::err_utils::{showmsg, shownr};
+use crate::err_utils::{showmsg, shownr, log_message, LogLevel};
 use crate::hamlib::{set_outfreq, Error, HamlibKeyer, Rig, RigConfig};
 use crate::keyer_interface::{CwKeyerFrontend, NullKeyer};
 use crate::mfj1278::Mfj1278Keyer;
 use crate::netkeyer::{netkeyer_from_globals, NetKeyerFrontend, NETKEYER};
+use crate::newtlf::callmaster::{CallMaster, GLOBAL_CALLMASTER};
 use crate::newtlf::netkeyer::Netkeyer;
 use crate::workqueue::{workqueue, NoWaitWorkSender, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
@@ -148,6 +151,33 @@ unsafe fn keyer_init(rig: &Option<Rig>) -> (Box<dyn CwKeyerFrontend>, Option<Arc
 
     (keyer_interface, netkeyer)
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: bool) -> usize {
+    let path = CStr::from_ptr(path);
+    let path = OsStr::from_bytes(path.to_bytes());
+
+    let file = if let Ok(file) = File::open(path) {
+        file
+    } else {
+        log_message!(LogLevel::WARN, "Error opening callmaster file.");
+        return 0;
+    };
+
+    match CallMaster::load(file, 128, only_na) {
+        Ok(callmaster) => {
+            let mut guard = GLOBAL_CALLMASTER.write().unwrap();
+            *guard = callmaster;
+            guard.len()
+        }
+        Err(_) => {
+            log_message!(LogLevel::WARN, "Error reading callmaster file.");
+            0
+        }
+    }
+}
+
+
 
 #[inline]
 fn fg_sleep_inner(delay: Duration) {

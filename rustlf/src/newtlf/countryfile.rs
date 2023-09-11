@@ -9,9 +9,8 @@ use std::{
     sync::OnceLock,
 };
 
-use crate::ffi::{CStringPtr, StaticCStrPtr};
-
 use self::parser::{parse_reader, CountryLine, Line};
+use super::ffi::{CStringPtr, StaticCStrPtr};
 
 pub mod ffi;
 pub mod lookup;

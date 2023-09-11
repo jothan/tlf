@@ -1,17 +1,13 @@
 use std::{
     collections::BTreeSet,
-    ffi::{c_char, CStr, CString, OsStr},
-    fs::File,
+    ffi::{c_char, CStr, CString},
     io::Read,
     ops::RangeFrom,
-    os::unix::prelude::OsStrExt,
     sync::RwLock,
 };
 
 use libc::c_void;
 use linereader::LineReader;
-
-use crate::err_utils::{log_message, LogLevel};
 
 pub struct CallMaster(BTreeSet<CString>);
 
@@ -92,31 +88,6 @@ impl CallMaster {
 }
 
 pub static GLOBAL_CALLMASTER: RwLock<CallMaster> = RwLock::new(CallMaster(BTreeSet::new()));
-
-#[no_mangle]
-pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: bool) -> usize {
-    let path = CStr::from_ptr(path);
-    let path = OsStr::from_bytes(path.to_bytes());
-
-    let file = if let Ok(file) = File::open(path) {
-        file
-    } else {
-        log_message!(LogLevel::WARN, "Error opening callmaster file.");
-        return 0;
-    };
-
-    match CallMaster::load(file, 128, only_na) {
-        Ok(callmaster) => {
-            let mut guard = GLOBAL_CALLMASTER.write().unwrap();
-            *guard = callmaster;
-            guard.len()
-        }
-        Err(_) => {
-            log_message!(LogLevel::WARN, "Error reading callmaster file.");
-            0
-        }
-    }
-}
 
 type ShowPartialFn = extern "C" fn(*const c_char, *const c_void) -> bool;
 
