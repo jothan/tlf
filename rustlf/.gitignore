@@ -4,3 +4,4 @@ Cargo.lock
 **/*.rs.bk
 *.pdb
 rust.h
+newtlf/newtlf.h
