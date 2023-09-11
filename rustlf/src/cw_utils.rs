@@ -71,10 +71,7 @@ pub unsafe extern "C" fn cw_message_length(message: *const c_char) -> c_uint {
         .copied()
         .map(|c| {
             if c == b'%' {
-                mycall
-                    .iter()
-                    .map(|c| getCWdots((*c) as c_char))
-                    .sum()
+                mycall.iter().map(|c| getCWdots((*c) as c_char)).sum()
             } else {
                 getCWdots(c as c_char)
             }

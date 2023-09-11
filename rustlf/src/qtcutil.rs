@@ -61,11 +61,7 @@ mod tests {
             make_line(i, &mut logline);
             callsign.fill(255);
 
-            parse_qtcline_inner(
-                logline.as_slice(),
-                callsign.as_mut_slice(),
-                tlf::RECV,
-            );
+            parse_qtcline_inner(logline.as_slice(), callsign.as_mut_slice(), tlf::RECV);
 
             let callsign = unsafe { CStr::from_ptr(callsign.as_ptr() as *const i8) };
             assert_eq!(callsign.to_bytes().len(), std::cmp::min(i, CALLSIGN_SIZE));

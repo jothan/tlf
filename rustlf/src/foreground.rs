@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::background_process::BackgroundContext;
-use crate::err_utils::{showmsg, shownr, log_message, LogLevel};
+use crate::err_utils::{log_message, showmsg, shownr, LogLevel};
 use crate::hamlib::{set_outfreq, Error, HamlibKeyer, Rig, RigConfig};
 use crate::keyer_interface::{CwKeyerFrontend, NullKeyer};
 use crate::mfj1278::Mfj1278Keyer;
@@ -176,8 +176,6 @@ pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: boo
         }
     }
 }
-
-
 
 #[inline]
 fn fg_sleep_inner(delay: Duration) {
