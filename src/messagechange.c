@@ -31,6 +31,7 @@
 #include "tlf.h"
 #include "ui_utils.h"
 #include "keystroke_names.h"
+#include "rust.h"
 
 static void enter_message(int bufnr) {
 

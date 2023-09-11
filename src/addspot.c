@@ -39,6 +39,7 @@
 #include "lancode.h"
 #include "splitscreen.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 /** add call to list of spots

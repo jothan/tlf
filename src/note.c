@@ -32,6 +32,7 @@
 #include "nicebox.h"		// Includes curses.h
 #include "scroll_log.h"
 #include "store_qso.h"
+#include "rust.h"
 
 
 void include_note(void) {

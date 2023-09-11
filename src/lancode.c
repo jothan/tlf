@@ -39,6 +39,7 @@
 #include "lancode.h"
 #include "tlf.h"
 #include "tlf_curses.h"
+#include "rust.h"
 
 
 int lan_socket_descriptor;

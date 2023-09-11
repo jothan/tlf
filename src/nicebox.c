@@ -25,6 +25,7 @@
 #include "nicebox.h"		// Includes curses.h
 #include "globalvars.h"
 #include "ui_utils.h"
+#include "rust.h"
 
 
 void wnicebox(WINDOW *win, int y, int x, int height, int width, char *boxname) {
