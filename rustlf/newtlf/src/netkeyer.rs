@@ -4,7 +4,7 @@ use std::net::{
 };
 use std::sync::atomic::{AtomicI8, Ordering};
 
-pub(crate) struct Netkeyer {
+pub struct Netkeyer {
     socket: UdpSocket,
     dest_addr: SocketAddr,
     sc_volume: AtomicI8,
@@ -38,7 +38,7 @@ macro_rules! write_esc {
 }
 
 impl Netkeyer {
-    pub(crate) fn new(dest_addr: SocketAddr) -> Result<Netkeyer, Error> {
+    pub fn new(dest_addr: SocketAddr) -> Result<Netkeyer, Error> {
         let bind_addr: SocketAddr = match dest_addr {
             SocketAddr::V4(dest) => {
                 if dest.ip().is_loopback() {
@@ -65,7 +65,7 @@ impl Netkeyer {
         })
     }
 
-    pub(crate) fn from_host_and_port(host: &str, port: u16) -> Result<Netkeyer, Error> {
+    pub fn from_host_and_port(host: &str, port: u16) -> Result<Netkeyer, Error> {
         let dest_addr = (host, port)
             .to_socket_addrs()?
             .next()
@@ -74,7 +74,7 @@ impl Netkeyer {
         Netkeyer::new(dest_addr)
     }
 
-    pub(crate) fn write_tone(&self, tone: u16) -> Result<(), Error> {
+    pub fn write_tone(&self, tone: u16) -> Result<(), Error> {
         self.set_tone(tone)?;
 
         if tone != 0 {
@@ -100,11 +100,11 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn reset(&self) -> Result<(), Error> {
+    pub fn reset(&self) -> Result<(), Error> {
         self.simple_command(b'0')
     }
 
-    pub(crate) fn set_speed(&self, speed: u8) -> Result<(), Error> {
+    pub fn set_speed(&self, speed: u8) -> Result<(), Error> {
         let mut buf = make_buf::<4>();
 
         if !(5..=60).contains(&speed) {
@@ -116,7 +116,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_tone(&self, tone: u16) -> Result<(), Error> {
+    pub fn set_tone(&self, tone: u16) -> Result<(), Error> {
         let mut buf = make_buf::<6>();
 
         if tone != 0 && !(300..=1000).contains(&tone) {
@@ -128,20 +128,19 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn abort(&self) -> Result<(), Error> {
+    pub fn abort(&self) -> Result<(), Error> {
         self.simple_command(b'4')
     }
 
-    #[allow(unused)]
-    pub(crate) fn exit(&self) -> Result<(), Error> {
+    pub fn exit(&self) -> Result<(), Error> {
         self.simple_command(b'5')
     }
 
-    pub(crate) fn enable_word_mode(&self) -> Result<(), Error> {
+    pub fn enable_word_mode(&self) -> Result<(), Error> {
         self.simple_command(b'6')
     }
 
-    pub(crate) fn set_weight(&self, weight: i8) -> Result<(), Error> {
+    pub fn set_weight(&self, weight: i8) -> Result<(), Error> {
         let mut buf = make_buf::<6>();
 
         if !(-50..=50).contains(&weight) {
@@ -153,7 +152,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_device(&self, device: &[u8]) -> Result<(), Error> {
+    pub fn set_device(&self, device: &[u8]) -> Result<(), Error> {
         let mut buf = Vec::with_capacity(device.len() + 2);
         buf.push(ESC);
         buf.push(b'8');
@@ -163,21 +162,21 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_ptt(&self, ptt: bool) -> Result<(), Error> {
+    pub fn set_ptt(&self, ptt: bool) -> Result<(), Error> {
         let mut buf = make_buf::<3>();
         write_esc!(buf, "a{}", ptt as u8);
         let _ = self.socket.send_to(extract_buf(&buf), self.dest_addr)?;
         Ok(())
     }
 
-    pub(crate) fn set_pin14(&self, pin14: bool) -> Result<(), Error> {
+    pub fn set_pin14(&self, pin14: bool) -> Result<(), Error> {
         let mut buf = make_buf::<3>();
         write_esc!(buf, "b{}", pin14 as u8);
         let _ = self.socket.send_to(extract_buf(&buf), self.dest_addr)?;
         Ok(())
     }
 
-    pub(crate) fn tune(&self, seconds: u8) -> Result<(), Error> {
+    pub fn tune(&self, seconds: u8) -> Result<(), Error> {
         let mut buf = make_buf::<4>();
 
         if seconds > 10 {
@@ -189,7 +188,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_tx_delay(&self, ms: u8) -> Result<(), Error> {
+    pub fn set_tx_delay(&self, ms: u8) -> Result<(), Error> {
         let mut buf = make_buf::<4>();
 
         if ms > 50 {
@@ -201,7 +200,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_band_switch(&self, bandindex: u8) -> Result<(), Error> {
+    pub fn set_band_switch(&self, bandindex: u8) -> Result<(), Error> {
         let mut buf = make_buf::<4>();
 
         if !(1..=9).contains(&bandindex) {
@@ -213,7 +212,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_sidetone_device(&self, dev: u8) -> Result<(), Error> {
+    pub fn set_sidetone_device(&self, dev: u8) -> Result<(), Error> {
         let cmd = [ESC, b'f', dev];
 
         if !b"coapns".contains(&dev) {
@@ -224,7 +223,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn set_sidetone_volume(&self, volume: u8) -> Result<(), Error> {
+    pub fn set_sidetone_volume(&self, volume: u8) -> Result<(), Error> {
         self.sc_volume
             .store(volume.try_into().ok().unwrap_or(-1), Ordering::Release);
         let mut buf = make_buf::<6>();
@@ -238,7 +237,7 @@ impl Netkeyer {
         Ok(())
     }
 
-    pub(crate) fn send_text(&self, text: &[u8]) -> Result<(), Error> {
+    pub fn send_text(&self, text: &[u8]) -> Result<(), Error> {
         if text.contains(&ESC) {
             return Err(Error::InvalidParameter);
         }

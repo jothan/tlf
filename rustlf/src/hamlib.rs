@@ -18,9 +18,9 @@ use crate::{
     err_utils::{log_message, showmsg, shownr, LogLevel},
     foreground::with_foreground,
     keyer_interface::{CwKeyerBackend, CwKeyerFrontend},
-    newtlf::netkeyer,
     workqueue::WorkSender,
 };
+use newtlf::netkeyer;
 
 const ENIMPL: c_int = -tlf::RIG_ENIMPL;
 const ENAVAIL: c_int = -tlf::RIG_ENAVAIL;

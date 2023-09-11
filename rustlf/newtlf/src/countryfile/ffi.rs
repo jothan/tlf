@@ -9,20 +9,20 @@ use std::{
 use super::{dummy_country, dummy_prefix, Country, DxccData, Prefix};
 
 // Safety: calling code expected to enforce synchronization
-pub(crate) struct GlobalDxccData(std::cell::UnsafeCell<Option<DxccData>>);
+pub struct GlobalDxccData(std::cell::UnsafeCell<Option<DxccData>>);
 
 unsafe impl Sync for GlobalDxccData {}
 
-pub(crate) static DXCC_DATA: GlobalDxccData = GlobalDxccData(UnsafeCell::new(None));
+pub static DXCC_DATA: GlobalDxccData = GlobalDxccData(UnsafeCell::new(None));
 
 impl GlobalDxccData {
-    pub(crate) unsafe fn get(&self) -> &DxccData {
+    pub unsafe fn get(&self) -> &DxccData {
         let inner = &mut *self.0.get();
         inner.as_ref().expect("GlobalDxccData not initialized")
     }
 
     #[allow(clippy::mut_from_ref)]
-    unsafe fn get_mut(&self) -> &mut DxccData {
+    pub unsafe fn get_mut(&self) -> &mut DxccData {
         let inner = &mut *self.0.get();
         inner.get_or_insert_with(Default::default)
     }

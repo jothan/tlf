@@ -14,7 +14,6 @@ mod hamlib;
 pub mod keyer_interface;
 pub mod mfj1278;
 mod netkeyer;
-pub mod newtlf;
 mod qtcutil;
 pub mod weakstubs;
 pub mod workqueue;

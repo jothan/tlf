@@ -4,12 +4,10 @@ use std::{
 };
 
 use crate::{
-    background_process::BackgroundContext,
-    foreground::BACKGROUND_HANDLE,
-    netkeyer::NETKEYER,
-    newtlf::netkeyer::Netkeyer,
+    background_process::BackgroundContext, foreground::BACKGROUND_HANDLE, netkeyer::NETKEYER,
     workqueue::WorkSender,
 };
+use newtlf::netkeyer::Netkeyer;
 
 struct PlaySoundConfig {
     pub(crate) netkeyer: Option<Arc<Netkeyer>>,

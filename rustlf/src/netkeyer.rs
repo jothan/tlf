@@ -7,7 +7,7 @@ use crate::cw_utils::GetCWSpeed;
 use crate::err_utils::{log_message, CResult};
 use crate::foreground::exec_foreground;
 use crate::keyer_interface::{with_keyer_interface, CwKeyerBackend, CwKeyerFrontend};
-use crate::newtlf::netkeyer::{Error, Netkeyer};
+use newtlf::netkeyer::{Error, Netkeyer};
 
 thread_local! {
     pub(crate) static NETKEYER: RefCell<Option<Arc<Netkeyer>>> = RefCell::new(None);

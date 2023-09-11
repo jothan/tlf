@@ -7,12 +7,12 @@ use std::{
     sync::OnceLock,
 };
 
+use newtlf::countryfile::{ffi::DXCC_DATA, CqZone};
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     background_process::{is_background_process_stopped, with_background},
     netkeyer::write_tone,
-    newtlf::countryfile::{ffi::DXCC_DATA, CqZone},
 };
 
 static CALLMASTER_RANDOM_LIST: OnceLock<Vec<CString>> = OnceLock::new();
@@ -48,7 +48,7 @@ impl CqwwSimulator {
 
     pub fn enable(&mut self) {
         CALLMASTER_RANDOM_LIST.get_or_init(|| {
-            crate::newtlf::callmaster::GLOBAL_CALLMASTER
+            newtlf::callmaster::GLOBAL_CALLMASTER
                 .read()
                 .unwrap()
                 .as_inner()

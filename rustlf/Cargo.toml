@@ -20,6 +20,7 @@ opt-level = 3
 
 [dependencies]
 tlf = { path = "tlf-sys" }
+newtlf = { path = "newtlf" }
 bbqueue = "0.5.1"
 thiserror = "1.0.37"
 oneshot = "0.1"
@@ -27,7 +28,6 @@ libc = "0.2"
 cstr = "0.2"
 flume="0.11"
 rayon="1.7"
-nom="7.1"
 linereader="0.4"
 rand="0.8"
 

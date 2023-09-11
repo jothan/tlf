@@ -7,8 +7,8 @@ use crate::{
     cw_utils::{decrease_cw_speed, increase_cw_speed, GetCWSpeed},
     err_utils::{self, log_message, switch_to_ssb, CResult},
     foreground::KEYER_INTERFACE,
-    newtlf::netkeyer::Error,
 };
+use newtlf::netkeyer::Error;
 
 pub trait CwKeyerFrontend {
     fn set_speed(&mut self, _speed: c_uint) -> Result<(), Error> {

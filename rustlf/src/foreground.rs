@@ -11,10 +11,10 @@ use crate::hamlib::{set_outfreq, Error, HamlibKeyer, Rig, RigConfig};
 use crate::keyer_interface::{CwKeyerFrontend, NullKeyer};
 use crate::mfj1278::Mfj1278Keyer;
 use crate::netkeyer::{netkeyer_from_globals, NetKeyerFrontend, NETKEYER};
-use crate::newtlf::callmaster::{CallMaster, GLOBAL_CALLMASTER};
-use crate::newtlf::netkeyer::Netkeyer;
 use crate::workqueue::{workqueue, NoWaitWorkSender, WorkSender, Worker};
 use crate::{background_process::BackgroundConfig, write_keyer::keyer_queue_init};
+use newtlf::callmaster::{CallMaster, GLOBAL_CALLMASTER};
+use newtlf::netkeyer::Netkeyer;
 
 const BACKGROUND_QUEUE_SIZE: Option<usize> = Some(16);
 const FOREGROUND_QUEUE_SIZE: Option<usize> = None;

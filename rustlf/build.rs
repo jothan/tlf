@@ -9,6 +9,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_include_guard("RUST_H")
         .with_sys_include("curses.h")
         .with_sys_include("hamlib/rig.h")
+        .with_include("newtlf.h")
         .generate()?
         .write_to_file("rust.h");
 

@@ -10,9 +10,9 @@ use crate::cqww_simulator::CqwwSimulator;
 use crate::err_utils::{log_message, LogLevel};
 use crate::foreground::{ForegroundContext, BACKGROUND_HANDLE, FOREGROUND_HANDLE};
 use crate::hamlib::Rig;
-use crate::newtlf::netkeyer::Netkeyer;
 use crate::workqueue::{WorkSender, Worker};
 use crate::write_keyer::{write_keyer, KeyerConsumer};
+use newtlf::netkeyer::Netkeyer;
 
 struct StopFlags {
     stopped: bool,
@@ -85,7 +85,10 @@ unsafe fn background_process(config: BackgroundConfig) {
     } = config;
     FOREGROUND_HANDLE.with_borrow_mut(|fg| *fg = Some(fg_producer));
 
-    let mut context = BackgroundContext { rig, simulator: CqwwSimulator::new() };
+    let mut context = BackgroundContext {
+        rig,
+        simulator: CqwwSimulator::new(),
+    };
 
     let mut lantimesync: c_int = 0;
     let mut fldigi_rpc_cnt: bool = false;

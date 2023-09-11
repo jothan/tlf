@@ -32,7 +32,7 @@ pub extern "C" fn dummy_prefix() -> &'static Prefix {
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
-pub struct CqZone(pub(crate) u8);
+pub struct CqZone(pub u8);
 
 impl From<CqZone> for u8 {
     fn from(value: CqZone) -> Self {
@@ -42,7 +42,7 @@ impl From<CqZone> for u8 {
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone)]
-pub struct ItuZone(pub(crate) u8);
+pub struct ItuZone(pub u8);
 
 impl From<ItuZone> for u8 {
     fn from(value: ItuZone) -> Self {

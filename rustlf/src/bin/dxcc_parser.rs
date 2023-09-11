@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use rustlf::newtlf::countryfile::DxccData;
+use newtlf::countryfile::DxccData;
 
 fn main() -> Result<(), std::io::Error> {
     let mut args = std::env::args();

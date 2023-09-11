@@ -8,9 +8,9 @@ use crate::{
     err_utils::switch_to_ssb,
     foreground::fg_usleep,
     keyer_interface::{CwKeyerBackend, CwKeyerFrontend},
-    newtlf::netkeyer::Error,
 };
 use cstr::cstr;
+use newtlf::netkeyer::Error;
 
 pub struct Mfj1278Keyer;
 
