@@ -57,21 +57,25 @@ impl CallMaster {
         Ok(CallMaster(set))
     }
 
-    pub fn starting_with<'a>(&'a self, query: &'a CString) -> impl Iterator<Item = &CString> + 'a {
+    pub fn starting_with<'a>(&'a self, query: &'a CString) -> impl Iterator<Item = &CStr> + 'a {
         // FIXME: find a way to feed a CStr to BTreeSet::range.
         self.0
             .range::<CString, RangeFrom<&CString>>(query..)
             .take_while(|&call| call.as_bytes().starts_with(query.to_bytes()))
+            .map(CString::as_c_str)
     }
 
-    pub fn containing<'a>(&'a self, query: &'a CStr) -> impl Iterator<Item = &CString> + 'a {
+    pub fn containing<'a>(&'a self, query: &'a CStr) -> impl Iterator<Item = &CStr> + 'a {
         let query = query.to_string_lossy();
 
-        self.0.iter().filter(move |&call| {
-            // Safety: all set calls must be valid UTF-8.
-            let call = unsafe { std::str::from_utf8_unchecked(call.as_bytes()) };
-            call.contains(&*query)
-        })
+        self.0
+            .iter()
+            .filter(move |&call| {
+                // Safety: all set calls must be valid UTF-8.
+                let call = unsafe { std::str::from_utf8_unchecked(call.as_bytes()) };
+                call.contains(query.as_ref())
+            })
+            .map(CString::as_c_str)
     }
 
     pub fn len(&self) -> usize {
@@ -156,7 +160,7 @@ pub unsafe extern "C" fn callmaster_version(buffer: *mut c_char) {
     let query = CString::new("VER").unwrap();
     let version = guard
         .starting_with(&query)
-        .find(|c| c.as_bytes().len() == CALLMASTER_VERSION_LEN);
+        .find(|c| c.to_bytes().len() == CALLMASTER_VERSION_LEN);
 
     if let Some(version) = version {
         buffer.copy_from_nonoverlapping(version.as_ptr(), CALLMASTER_VERSION_LEN + 1);
