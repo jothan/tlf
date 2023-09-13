@@ -9,7 +9,7 @@ tlf_SOURCES = \
 	cabrillo_utils.c calledit.c callinput.c changefreq.c changepars.c \
 	change_rst.c checklogfile.c checkqtclogfile.c \
 	cleanup.c clear_display.c clusterinfo.c \
-	dummy.c deleteqso.c \
+	deleteqso.c \
 	edit_last.c editlog.c err_utils.c \
 	fldigixmlrpc.c freq_display.c focm.c \
 	genqtclist.c \

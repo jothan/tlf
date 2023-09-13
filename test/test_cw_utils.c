@@ -3,7 +3,6 @@
 
 #include "../rustlf/rust.h"
 
-// OBJECT ../src/dummy.o
 
 const unsigned int bandcorner[NBANDS][2] = {
     { 1800000, 2000000 },	// band bottom, band top
