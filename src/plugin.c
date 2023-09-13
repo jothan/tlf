@@ -18,6 +18,7 @@
 #include "getctydata.h"
 
 #include "parse_logcfg.h"   // for PARSE_OK/PARSE_ERROR
+#include "rust.h"
 
 /*
 TODO:
@@ -129,8 +130,8 @@ static PyObject *py_get_dxcc(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "s", &call))
 	return NULL;
 
-    prefix_data *prefix = getctyinfo(call);
-    dxcc_data *dxcc = dxcc_by_index(prefix->dxcc_ctynr);
+    const prefix_data *prefix = getctyinfo(call);
+    const dxcc_data *dxcc = dxcc_by_index(prefix->dxcc_ctynr);
 
     PyObject *py_dxcc = PyStructSequence_New(dxcc_type);
     PyStructSequence_SetItem(py_dxcc, 0, Py_BuildValue("s", dxcc->countryname));
@@ -414,7 +415,7 @@ void plugin_setup() {
 
     if (NULL != PyErr_Occurred()) {
 	PyErr_Print();
-	sleep(2);
+	fg_sleep(2);
 	exit(1);
     }
 #endif
@@ -448,7 +449,7 @@ int plugin_score(struct qso_t *qso) {
 
     if (NULL != PyErr_Occurred()) {
 	PyErr_Print();
-	sleep(2);
+	fg_sleep(2);
 	//exit(1);
     }
 #endif
@@ -472,7 +473,7 @@ void plugin_check_exchange(struct qso_t *qso) {
 
     if (NULL != PyErr_Occurred()) {
 	PyErr_Print();
-	sleep(2);
+	fg_sleep(2);
 	exit(1);
     }
 #endif
