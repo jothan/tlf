@@ -317,7 +317,7 @@ void edit_last(void) {
 	log_read_n_score();
     }
 
-    scroll_log();
+    scroll_log(false);
 
     start_background_process();
 }

@@ -967,7 +967,7 @@ int main(int argc, char *argv[]) {
 	readqtccalls();
     }
 
-    scroll_log();		/* show the last 5  log lines and
+    scroll_log(false);		/* show the last 5  log lines and
 				   set the next serial number */
     clearmsg_wait();
 

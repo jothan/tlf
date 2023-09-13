@@ -21,6 +21,6 @@
 #ifndef SCROLL_LOG_H
 #define SCROLL_LOG_H
 
-void scroll_log(void);
+void scroll_log(bool from_lan);
 
 #endif /* SCROLL_LOG_H */

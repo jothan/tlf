@@ -41,7 +41,7 @@
  *
  * \Todo needs to be cleaned up, to make more clear how it works, especially
  * if LAN is active*/
-void get_next_serial(void) {
+void get_next_serial(bool from_lan) {
     int mm;
 
     mm = qsonum - 1;
@@ -75,7 +75,7 @@ void get_next_serial(void) {
 
     if (lan_active == 1 && (contest->exchange_serial)) {
 
-	if (lan_mutex == 2) {	/* last stored message is from lan */
+	if (from_lan) {	/* last stored message is from lan */
 
 	    if (atoi(qsonrstr) <= highqsonr) {
 		qsonum = highqsonr;
@@ -101,7 +101,7 @@ void get_next_serial(void) {
 #define LINELEN 80
 
 /** read the last 5 log lines from qso_array and set the next qso number */
-void scroll_log(void) {
+void scroll_log(bool from_lan) {
 
     for (int i = 5; i > 0; i--) {
 	if (NR_QSOS < i) {
@@ -111,5 +111,5 @@ void scroll_log(void) {
 	}
     }
 
-    get_next_serial();
+    get_next_serial(from_lan);
 }

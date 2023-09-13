@@ -98,7 +98,6 @@ extern char proposed_exchange[80];
 extern char lan_logline[];
 extern char logfile[];
 extern char qsonrstr[];
-extern int lan_mutex;
 extern bool lan_active;
 extern int highqsonr;
 

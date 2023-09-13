@@ -173,7 +173,7 @@ void delete_qso(void) {
 
 	    log_read_n_score();
 	}
-	scroll_log();
+	scroll_log(false);
     }
 
     attron(COLOR_PAIR(C_LOG) | A_STANDOUT);

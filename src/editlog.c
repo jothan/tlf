@@ -84,7 +84,7 @@ void logedit(void) {
     attron(COLOR_PAIR(C_LOG) | A_STANDOUT);
     erase();
     refreshp();
-    scroll_log();
+    scroll_log(false);
     clear_display();
     attron(COLOR_PAIR(C_LOG) | A_STANDOUT);
 

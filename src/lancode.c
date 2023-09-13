@@ -63,7 +63,6 @@ int lan_port = 6788;
 bool lan_active = false;
 int send_error[MAXNODES];
 int send_error_limit[MAXNODES];
-int lan_mutex = 0;
 int send_packets[MAXNODES];
 int recv_error;
 int recv_packets;

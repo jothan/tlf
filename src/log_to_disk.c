@@ -126,15 +126,7 @@ void log_to_disk(char lan_message[256]) {
 	g_ptr_array_add(qso_array, qso);
     }
 
-
-    if (from_lan)
-	lan_mutex = 2;
-    else
-	lan_mutex = 1;
-
-    scroll_log();
-
-    lan_mutex = 0;
+    scroll_log(from_lan);
 
     attron(modify_attr(COLOR_PAIR(NORMCOLOR)));	/* erase comment  field */
 

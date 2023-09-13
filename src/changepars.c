@@ -504,14 +504,14 @@ int changepars(void) {
 	    if (strlen(synclogfile) > 0)
 		synclog(synclogfile);
 	    log_read_n_score();
-	    scroll_log();
+	    scroll_log(false);
 	    clear_display();
 	    break;
 	}
 	case 42: {		/* RESCORE */
 	    log_read_n_score();
 	    clear_display();
-	    scroll_log();
+	    scroll_log(false);
 	    break;
 	}
 	case 43: {		/* SCVOLUME - set soundcard volume */
