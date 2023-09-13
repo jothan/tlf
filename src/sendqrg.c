@@ -64,9 +64,9 @@ int sendqrg(void) {
 
     sleep(10);
 
-    pthread_mutex_lock(&rig_lock);
+    pthread_mutex_lock(&tlf_rig_mutex);
     retcode = rig_get_freq(my_rig, RIG_VFO_CURR, &rigfreq);
-    pthread_mutex_unlock(&rig_lock);
+    pthread_mutex_unlock(&tlf_rig_mutex);
 
     if (retcode != RIG_OK) {
 	TLF_LOG_WARN("Problem with rig get freq: %s", rigerror(retcode));
@@ -77,9 +77,9 @@ int sendqrg(void) {
 
     const freq_t testfreq = 14000000;	// test set frequency
 
-    pthread_mutex_lock(&rig_lock);
+    pthread_mutex_lock(&tlf_rig_mutex);
     retcode = rig_set_freq(my_rig, RIG_VFO_CURR, testfreq);
-    pthread_mutex_unlock(&rig_lock);
+    pthread_mutex_unlock(&tlf_rig_mutex);
 
     if (retcode != RIG_OK) {
 	TLF_LOG_WARN("Problem with rig set freq: %s", rigerror(retcode));
@@ -87,9 +87,9 @@ int sendqrg(void) {
 	showmsg("Rig set freq ok!");
     }
 
-    pthread_mutex_lock(&rig_lock);
+    pthread_mutex_lock(&tlf_rig_mutex);
     retcode = rig_get_freq(my_rig, RIG_VFO_CURR, &rigfreq);	// read qrg
-    pthread_mutex_unlock(&rig_lock);
+    pthread_mutex_unlock(&tlf_rig_mutex);
 
     if (retcode != RIG_OK) {
 	TLF_LOG_WARN("Problem with rig get freq: %s", rigerror(retcode));

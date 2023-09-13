@@ -13,7 +13,7 @@ use std::{
 
 use crate::{
     background_process::{with_background, BackgroundContext},
-    bands::freq2band,
+    bands::freq2bandindex,
     cw_utils::{GetCWSpeed, SetCWSpeed},
     err_utils::{log_message, showmsg, shownr, LogLevel},
     foreground::with_foreground,
@@ -493,7 +493,7 @@ impl Rig {
     }
 
     fn update_display_frequency(&mut self, freq: tlf::freq_t) {
-        let bandidx = freq2band(freq as c_uint);
+        let bandidx = freq2bandindex(freq as c_uint);
 
         if freq > 0. {
             with_foreground(|fg| {
@@ -604,7 +604,7 @@ impl RigState {
         {
             out.fldigi_carrier = Some(tlf::freq_t::from(unsafe { tlf::fldigi_get_carrier() }));
         }
-        out.bandidx = freq2band(radio_to_display_frequency(freq, Some(&out)) as c_uint);
+        out.bandidx = freq2bandindex(radio_to_display_frequency(freq, Some(&out)) as c_uint);
 
         out
     }
