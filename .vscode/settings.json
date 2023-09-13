@@ -9,4 +9,9 @@
         "istream": "c",
         "ostream": "c"
 },
+"files.exclude": {
+    "**/*.a": true,
+    "**/*.o": true,
+    "src/.deps": true,
+}
 }

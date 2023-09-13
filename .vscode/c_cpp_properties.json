@@ -6,9 +6,10 @@
                 "${workspaceFolder}/**",
                 "/usr/include",
                 "/usr/include/glib-2.0",
-                "/usr/lib/x86_64-linux-gnu/glib-2.0/include"
+                "/usr/lib/x86_64-linux-gnu/glib-2.0/include",
+                "/usr/include/python3.11"
             ],
-            "defines": [],
+            "defines": ["PACKAGE_DATA_DIR=\"/usr/share/tlf\""],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "c++14",
