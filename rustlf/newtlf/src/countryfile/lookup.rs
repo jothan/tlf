@@ -33,9 +33,7 @@ pub(crate) fn normalize_call(call: &str) -> (Cow<str>, bool) {
     let mut call = Cow::from(call);
     let mut checkbuffer = String::new();
 
-    let (call1, call2) = if let Some(parts) = call.split_once('/') {
-        parts
-    } else {
+    let Some((call1, call2)) = call.split_once('/') else {
         return (call, false);
     };
 

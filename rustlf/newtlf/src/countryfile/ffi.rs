@@ -101,9 +101,7 @@ pub unsafe extern "C" fn getpfxindex(
         return -1;
     }
     let dd = unsafe { DXCC_DATA.get() };
-    let call = if let Ok(call) = unsafe { ptr_to_str(call) } {
-        call
-    } else {
+    let Ok(call) = (unsafe { ptr_to_str(call) }) else {
         return -1;
     };
 
@@ -181,9 +179,7 @@ pub unsafe extern "C" fn getctynr(call: *const c_char) -> usize {
         return *idx;
     }
     let dd = unsafe { DXCC_DATA.get() };
-    let call = if let Ok(call) = unsafe { ptr_to_str(call) } {
-        call
-    } else {
+    let Ok(call) = (unsafe { ptr_to_str(call) }) else {
         return 0;
     };
 

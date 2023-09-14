@@ -12,9 +12,7 @@ fn main() -> Result<(), std::io::Error> {
 
     for mut arg in args {
         arg.make_ascii_uppercase();
-        let pfx_idx = if let Some(idx) = data.prefixes.find_best_match(&arg) {
-            idx
-        } else {
+        let Some(pfx_idx) = data.prefixes.find_best_match(&arg) else {
             println!("{arg}: not found\n");
             continue;
         };
