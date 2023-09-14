@@ -118,7 +118,7 @@ void lookup_keys() {
 	showmsg("See ':CQD' in man page for setting Auto_CQ delay");
 	showmsg("");
 	beep();
-	fg_sleep(2);
+	sleep(2);
     }
 }
 
