@@ -220,7 +220,7 @@ struct linedata_t *get_next_qtc_record(FILE *fp, int qtcdirection) {
     }
 
     if (buffer != NULL)
-        free(buffer);
+	free(buffer);
     return ptr;
 }
 

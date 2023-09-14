@@ -288,8 +288,8 @@ void checklogfile(void) {
 			    fputs(inputbuffer, outfile);
 			}
 		    }
-                    if (inputbuffer != NULL)
-                        free(inputbuffer);
+		    if (inputbuffer != NULL)
+			free(inputbuffer);
 		    fclose(infile);
 		    fclose(outfile);
 		}
