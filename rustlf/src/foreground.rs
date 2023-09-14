@@ -157,9 +157,7 @@ pub unsafe extern "C" fn load_callmaster_inner(path: *const c_char, only_na: boo
     let path = CStr::from_ptr(path);
     let path = OsStr::from_bytes(path.to_bytes());
 
-    let file = if let Ok(file) = File::open(path) {
-        file
-    } else {
+    let Ok(file) = File::open(path) else {
         log_message!(LogLevel::WARN, "Error opening callmaster file.");
         return 0;
     };
