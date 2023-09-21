@@ -33,14 +33,8 @@ unsafe fn ptr_to_str<'a>(s: *const c_char) -> Result<&'a str, Utf8Error> {
     CStr::from_ptr(s).to_str()
 }
 
-#[allow(non_camel_case_types)]
-pub type dxcc_data = Country;
-
-#[allow(non_camel_case_types)]
-pub type prefix_data = Prefix;
-
 #[no_mangle]
-pub extern "C" fn dxcc_by_index(mut index: usize) -> *const dxcc_data {
+pub extern "C" fn dxcc_by_index(mut index: usize) -> *const Country {
     let dd = unsafe { DXCC_DATA.get() };
 
     if index >= dd.countries.len() {
@@ -50,7 +44,7 @@ pub extern "C" fn dxcc_by_index(mut index: usize) -> *const dxcc_data {
 }
 
 #[no_mangle]
-pub extern "C" fn prefix_by_index(index: usize) -> *const prefix_data {
+pub extern "C" fn prefix_by_index(index: usize) -> *const Prefix {
     let dd = unsafe { DXCC_DATA.get() };
     dd.prefixes.get(index).unwrap_or_else(|| dummy_prefix())
 }
@@ -190,7 +184,7 @@ pub unsafe extern "C" fn getctynr(call: *const c_char) -> usize {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn getctyinfo(call: *const c_char) -> *const prefix_data {
+pub unsafe extern "C" fn getctyinfo(call: *const c_char) -> *const Prefix {
     if GETCTYNR_MOCK.get().is_some() {
         return std::ptr::null();
     }

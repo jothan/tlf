@@ -9,6 +9,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_include_guard("NEWTLF_H")
         .with_sys_include("curses.h")
         .with_sys_include("hamlib/rig.h")
+        .rename_item("Country", "dxcc_data")
+        .rename_item("Prefix", "prefix_data")
         .generate()?
         .write_to_file("newtlf.h");
 

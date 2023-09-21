@@ -162,8 +162,7 @@ typedef struct {
     double Long;    // +: west,  -: east
 } mystation_t;
 
-struct Prefix;
-typedef struct Prefix prefix_data;
+struct prefix_data;
 
 /** worked station
  *
@@ -172,7 +171,7 @@ typedef struct {
     char call[20]; 		/**< call of the station */
     char exchange[24]; 		/**< the last exchange */
     int band; 			/**< bitmap for worked bands */
-    const prefix_data *ctyinfo;	/**< pointer to country info from cty.dat */
+    const struct prefix_data *ctyinfo;	/**< pointer to country info from cty.dat */
     long qsotime[3][NBANDS];	/**< last timestamp of qso in gmtime
 				  for all modes and bands */
 } worked_t;
